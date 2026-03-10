@@ -45,9 +45,15 @@
 
 ## 快速开始（新手）
 1. 初始化数据库：执行 `docs/database/` 脚本（见下文执行顺序）。
-2. 配置后端：修改 `backend/src/main/resources/application.yml`（可参考示例片段）。
+2. 配置后端：复制 `backend/src/main/resources/application.yml.example` 为 `application.yml` 并修改配置。
 3. 启动后端：`mvn spring-boot:run`。
 4. 启动小程序：微信开发者工具打开 `condenser-miniprogram` 并构建 npm。
+
+## 最小可运行清单
+- 数据库脚本：`docs/database/`（见「数据库初始化」）
+- 配置模板：`backend/src/main/resources/application.yml.example`
+- 运行步骤：先「后端运行」，再「小程序运行」
+- 默认账号：见「示例账号」
 
 ## 数据库初始化
 脚本位于 `docs/database/`。
