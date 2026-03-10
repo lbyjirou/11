@@ -1,0 +1,37 @@
+<view class="container">
+  <view class="logo-section">
+    <image class="logo" src="/images/logo.png" mode="aspectFit"></image>
+    <text class="title">广西易德科技有限责任公司产品报价系统</text>
+  </view>
+
+  <view class="form-section">
+    <view class="input-group">
+      <text class="label">用户名</text>
+      <input
+        class="input"
+        type="text"
+        placeholder="请输入用户名"
+        value="{{username}}"
+        bindinput="onUsernameInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <text class="label">密码</text>
+      <input
+        class="input"
+        type="text"
+        password
+        placeholder="请输入密码"
+        value="{{password}}"
+        bindinput="onPasswordInput"
+      />
+    </view>
+
+    <button class="login-btn" type="primary" loading="{{loading}}" bindtap="onLogin">登录</button>
+  </view>
+
+  <view class="footer">
+    <text class="version">v2.0.0</text>
+  </view>
+</view>

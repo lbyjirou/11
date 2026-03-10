@@ -1,0 +1,88 @@
+<view class="splash-container {{loaded ? 'loaded' : ''}}" aria-label="易德科技欢迎页">
+  <!-- 背景装饰 -->
+  <view class="bg-decoration">
+    <view class="circle circle-1"></view>
+    <view class="circle circle-2"></view>
+    <view class="circle circle-3"></view>
+    <view class="leaf leaf-1"></view>
+    <view class="leaf leaf-2"></view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="content">
+    <!-- Logo 区域 -->
+    <view class="logo-section" aria-label="公司标志">
+      <view class="logo-container">
+        <image
+          class="logo-image"
+          src="/images/logo.png"
+          mode="aspectFit"
+          aria-label="易德冷链Logo"
+        />
+      </view>
+      <view class="company-name">易德冷链</view>
+      <view class="company-slogan">链接财富</view>
+      <view class="company-desc">中国移动智能热管理系统解决方案提供商</view>
+    </view>
+
+    <!-- 联系信息 -->
+    <view class="contact-section" aria-label="联系方式">
+      <view class="contact-card">
+        <!-- 联系电话 -->
+        <view class="contact-item contact-item-phone" aria-label="联系电话">
+          <view class="contact-icon phone-icon">
+            <view class="icon-phone"></view>
+          </view>
+          <view class="contact-info">
+            <text class="contact-label">联系电话</text>
+            <view class="phone-list">
+              <text class="phone-number" bindtap="makeCall" data-phone="400-860-4866">400-860-4866</text>
+              <text class="phone-number" bindtap="makeCall" data-phone="0772-5054888">0772-5054888</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="contact-divider"></view>
+
+        <!-- 邮箱 -->
+        <view class="contact-item" bindtap="copyEmail" aria-label="邮箱 xiaoshoubu@gxyide.com">
+          <view class="contact-icon email-icon">
+            <view class="icon-email"></view>
+          </view>
+          <view class="contact-info">
+            <text class="contact-label">电子邮箱</text>
+            <text class="contact-value">xiaoshoubu@gxyide.com</text>
+          </view>
+          <view class="contact-arrow"></view>
+        </view>
+
+        <view class="contact-divider"></view>
+
+        <!-- 地址 -->
+        <view class="contact-item" bindtap="openMap" aria-label="总部地址 柳州市河西高新技术产业开发区欣悦路8号">
+          <view class="contact-icon location-icon">
+            <view class="icon-location"></view>
+          </view>
+          <view class="contact-info">
+            <text class="contact-label">总部地址</text>
+            <text class="contact-value address">柳州市河西高新技术产业开发区欣悦路8号</text>
+          </view>
+          <view class="contact-arrow"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 进入按钮 -->
+    <view class="enter-section">
+      <button class="enter-btn" bindtap="enterApp" aria-label="进入应用">
+        <text>进入应用</text>
+        <view class="btn-arrow"></view>
+      </button>
+    </view>
+  </view>
+
+  <!-- 底部版权 -->
+  <view class="footer">
+    <text>© 2024 广西易德科技有限责任公司</text>
+  </view>
+</view>

@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/splash/splash",
+    "pages/login/login",
+    "pages/home/home",
+    "pages/condenser/condenser",
+    "pages/preview/preview",
+    "pages/history/history",
+    "pages/profile/profile",
+    "pages/user-manage/user-manage",
+    "pages/config/config",
+    "pages/process-manage/process-manage",
+    "pages/spec-manage/spec-manage",
+    "pages/logistics-view/logistics-view",
+    "pages/radiator/radiator",
+    "pages/evaporator/evaporator",
+    "pages/liquid-cooling/liquid-cooling",
+    "pages/role-manage/role-manage",
+    "pages/deadline-settings/deadline-settings"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#07c160",
+    "navigationBarTitleText": "广西易德报价计算器",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999",
+    "selectedColor": "#07c160",
+    "backgroundColor": "#fff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

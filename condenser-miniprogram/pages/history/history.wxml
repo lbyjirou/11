@@ -1,0 +1,92 @@
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">历史报价</text>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索客户名称..." value="{{keyword}}" bindinput="onKeywordInput" bindconfirm="doSearch" />
+    </view>
+  </view>
+
+  <!-- 列表区域 -->
+  <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMore" refresher-enabled bindrefresherrefresh="onRefresh" refresher-triggered="{{refreshing}}">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && list.length === 0}}">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无报价记录</text>
+    </view>
+
+    <!-- 报价列表 -->
+    <view class="quote-list" wx:if="{{list.length > 0}}">
+      <view class="quote-item" wx:for="{{list}}" wx:key="id" bindtap="viewDetail" data-id="{{item.id}}">
+        <view class="quote-header">
+          <text class="quote-no">{{item.quoteNo}}</text>
+          <text class="quote-status {{item.status === 1 ? 'active' : 'inactive'}}">{{item.status === 1 ? '有效' : '作废'}}</text>
+        </view>
+        <view class="quote-body">
+          <view class="quote-info">
+            <text class="customer-name">{{item.customerName || '未填写客户'}}</text>
+            <text class="product-type">{{item.productType}}</text>
+          </view>
+          <view class="quote-price">
+            <text class="price-value">¥{{item.totalPrice}}</text>
+            <text class="price-qty">×{{item.quantity}}</text>
+          </view>
+        </view>
+        <view class="quote-footer">
+          <text class="create-time">{{item.createTime}}</text>
+          <text class="view-more">点击操作 ></text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="loading-more" wx:if="{{loading && list.length > 0}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && list.length > 0}}">
+      <text>- 没有更多了 -</text>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- 初始加载 -->
+  <view class="loading-full" wx:if="{{loading && list.length === 0}}">
+    <view class="loading-spinner large"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 操作弹窗 -->
+  <view class="action-mask" wx:if="{{showActionSheet}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet" wx:if="{{showActionSheet}}">
+    <view class="action-header">
+      <text class="action-title">{{selectedItem.quoteNo}}</text>
+      <text class="action-subtitle">{{selectedItem.customerName || '未填写客户'}} · ¥{{selectedItem.totalPrice}}</text>
+    </view>
+    <view class="action-list">
+      <view class="action-item" bindtap="exportExcel">
+        <text class="action-icon">📥</text>
+        <text class="action-text">导出 Excel</text>
+      </view>
+      <view class="action-item danger" bindtap="deleteQuote">
+        <text class="action-icon">🗑️</text>
+        <text class="action-text">删除报价单</text>
+      </view>
+    </view>
+    <view class="action-cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
+</view>

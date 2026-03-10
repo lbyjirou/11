@@ -1,0 +1,99 @@
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">用户管理</text>
+  </view>
+
+  <!-- 添加按钮（独立放置，避免被胶囊遮挡） -->
+  <view class="action-bar">
+    <view class="add-btn" bindtap="showAddModal">
+      <text>+ 添加用户</text>
+    </view>
+  </view>
+
+  <!-- 用户列表 -->
+  <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled bindrefresherrefresh="onRefresh" refresher-triggered="{{refreshing}}">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && users.length === 0}}">
+      <text class="empty-icon">👥</text>
+      <text class="empty-text">暂无用户</text>
+    </view>
+
+    <!-- 用户列表 -->
+    <view class="user-list" wx:if="{{users.length > 0}}">
+      <view class="user-item" wx:for="{{users}}" wx:key="id">
+        <view class="user-avatar">
+          <text>{{item.realName ? item.realName[0] : 'U'}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{item.realName || item.username}}</view>
+          <view class="user-meta">
+            <text class="user-account">@{{item.username}}</text>
+            <text class="user-role {{item.role}}">{{roleMap[item.role] || item.role}}</text>
+          </view>
+        </view>
+        <view class="user-status {{item.status === 1 ? 'active' : 'inactive'}}">
+          {{item.status === 1 ? '启用' : '禁用'}}
+        </view>
+        <view class="user-actions">
+          <view class="action-btn edit" bindtap="editUser" data-user="{{item}}">编辑</view>
+          <view class="action-btn reset" bindtap="resetPassword" data-user="{{item}}">重置密码</view>
+          <view class="action-btn {{item.status === 1 ? 'disable' : 'enable'}}" bindtap="toggleStatus" data-user="{{item}}">
+            {{item.status === 1 ? '禁用' : '启用'}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- 加载中 -->
+  <view class="loading-full" wx:if="{{loading && users.length === 0}}">
+    <view class="loading-spinner large"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 添加/编辑弹窗 -->
+  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal"></view>
+  <view class="modal-content" wx:if="{{showModal}}">
+    <view class="modal-header">
+      <text class="modal-title">{{isEdit ? '编辑用户' : '添加用户'}}</text>
+      <view class="modal-close" bindtap="hideModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="form-item">
+        <text class="form-label">账号</text>
+        <input class="form-input" value="{{formData.username}}" bindinput="onFormInput" data-field="username" placeholder="请输入账号" />
+      </view>
+      <view class="form-item" wx:if="{{!isEdit}}">
+        <text class="form-label">密码</text>
+        <input class="form-input" value="{{formData.password}}" bindinput="onFormInput" data-field="password" placeholder="请输入密码" password />
+      </view>
+      <view class="form-item">
+        <text class="form-label">姓名</text>
+        <input class="form-input" value="{{formData.realName}}" bindinput="onFormInput" data-field="realName" placeholder="请输入姓名" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">手机号</text>
+        <input class="form-input" value="{{formData.phone}}" bindinput="onFormInput" data-field="phone" placeholder="请输入手机号" />
+      </view>
+      <view class="form-item">
+        <text class="form-label">角色</text>
+        <picker class="form-picker" bindchange="onRoleChange" value="{{roleIndex}}" range="{{roleOptions}}" range-key="label">
+          <view class="picker-content">
+            <text>{{roleOptions[roleIndex].label}}</text>
+            <view class="picker-arrow"></view>
+          </view>
+        </picker>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="hideModal">取消</button>
+      <button class="btn-confirm" bindtap="saveUser">保存</button>
+    </view>
+  </view>
+</view>

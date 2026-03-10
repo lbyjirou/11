@@ -1,0 +1,101 @@
+<view class="page-container">
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">预设工序管理</text>
+  </view>
+
+  <view class="action-bar">
+    <view class="add-btn" bindtap="showAddModal">
+      <text>+ 新增预设工序</text>
+    </view>
+  </view>
+
+  <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled bindrefresherrefresh="onRefresh" refresher-triggered="{{refreshing}}">
+    <view class="empty-state" wx:if="{{!loading && processList.length === 0}}">
+      <text class="empty-text">暂无预设工序</text>
+    </view>
+
+    <view class="process-list" wx:if="{{processList.length > 0}}">
+      <view class="process-item {{item.isActive === 0 ? 'disabled' : ''}}" wx:for="{{processList}}" wx:key="id">
+        <view class="process-info">
+          <view class="process-name">{{item.processName}}</view>
+          <view class="process-meta">
+            <text class="process-tag" wx:if="{{item.sectionLabel}}">{{item.sectionLabel}}</text>
+            <text class="process-tag">{{item.isActive === 1 ? '启用' : '禁用'}}</text>
+          </view>
+        </view>
+        <view class="process-actions">
+          <view class="action-btn toggle {{item.isActive === 1 ? 'on' : 'off'}}" bindtap="toggleActive" data-item="{{item}}">
+            {{item.isActive === 1 ? '启用' : '禁用'}}
+          </view>
+          <view class="action-btn edit" bindtap="editProcess" data-item="{{item}}">编辑</view>
+          <view class="action-btn delete" bindtap="deleteProcess" data-item="{{item}}">删除</view>
+        </view>
+      </view>
+    </view>
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <view class="loading-full" wx:if="{{loading && processList.length === 0}}">
+    <view class="loading-spinner large"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 新增/编辑弹窗 -->
+  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal"></view>
+  <view class="modal-content" wx:if="{{showModal}}">
+    <view class="modal-header">
+      <text class="modal-title">{{isEdit ? '编辑预设工序' : '新增预设工序'}}</text>
+      <view class="modal-close" bindtap="hideModal">x</view>
+    </view>
+    <scroll-view class="modal-body" scroll-y>
+      <view class="form-item">
+        <text class="form-label">工序名称 *</text>
+        <input class="form-input" value="{{formData.processName}}" bindinput="onFormInput" data-field="processName" placeholder="如：冲压、焊接、喷涂" />
+      </view>
+      <view class="form-item section-search-wrap">
+        <text class="form-label">所属区域 *</text>
+        <input class="form-input" value="{{sectionSearch}}" bindinput="onSectionSearchInput" bindblur="hideSectionDropdown" placeholder="输入区域名称，搜索已有或新建" />
+        <view class="section-dropdown" wx:if="{{showSectionDropdown && filteredSections.length}}">
+          <scroll-view scroll-y style="max-height:300rpx;">
+            <view class="section-option" wx:for="{{filteredSections}}" wx:key="key" catchtap="selectSection" data-key="{{item.key}}">
+              <text class="section-option-label">{{item.label}}</text>
+              <text class="section-option-key">{{item.key}}</text>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+      <view class="form-item" wx:if="{{sectionSearch}}">
+        <text class="form-label">区域变量名 *（英文标识）</text>
+        <input class="form-input" value="{{formData.sectionKey}}" bindinput="onSectionKeyInput" placeholder="如：stamping, welding" />
+      </view>
+
+      <!-- 列定义 -->
+      <view class="form-divider">列定义</view>
+      <view class="col-list">
+        <view class="col-item" wx:for="{{formData.columns}}" wx:key="key">
+          <view class="col-row-top">
+            <input class="col-input name" value="{{item.label}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="label" placeholder="列名" />
+            <input class="col-input key" value="{{item.key}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="key" placeholder="变量名" disabled="{{item.key === 'name'}}" />
+            <view class="col-del" catchtap="deleteColumn" data-idx="{{index}}">x</view>
+          </view>
+          <view class="col-row-bottom">
+            <picker class="col-picker" bindchange="onColumnRoleChange" data-idx="{{index}}" range="{{['输入', '输出']}}">
+              <view class="col-tag {{item.role === 'output' ? 'output' : 'input'}}">{{item.role === 'output' ? '输出' : '输入'}}</view>
+            </picker>
+            <input class="col-input unit" value="{{item.unit}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="unit" placeholder="单位" />
+            <input wx:if="{{item.role === 'output'}}" class="col-input formula" value="{{item.formula}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="formula" placeholder="公式" />
+            <input wx:if="{{item.role === 'input' && item.key !== 'name'}}" class="col-input" value="{{item.defaultValue}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="defaultValue" placeholder="默认值" />
+          </view>
+        </view>
+      </view>
+      <view class="col-add" bindtap="addColumn">+ 添加列</view>
+    </scroll-view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="hideModal">取消</button>
+      <button class="btn-confirm" bindtap="saveProcess">保存</button>
+    </view>
+  </view>
+</view>

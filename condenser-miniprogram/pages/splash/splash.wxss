@@ -1,0 +1,461 @@
+/* 生态未来主义风格 - 绿色/柑橘色调 */
+page {
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 50%, #fef3c7 100%);
+  min-height: 100vh;
+}
+
+.splash-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20rpx);
+  transition: all 0.6s ease-out;
+}
+
+.splash-container.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 背景装饰 - 清洁能源主题 */
+.bg-decoration {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+}
+
+.circle-1 {
+  width: 400rpx;
+  height: 400rpx;
+  background: linear-gradient(135deg, #22c55e 0%, #84cc16 100%);
+  top: -100rpx;
+  right: -100rpx;
+  animation: float 8s ease-in-out infinite;
+}
+
+.circle-2 {
+  width: 300rpx;
+  height: 300rpx;
+  background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+  bottom: 200rpx;
+  left: -80rpx;
+  animation: float 6s ease-in-out infinite reverse;
+}
+
+.circle-3 {
+  width: 200rpx;
+  height: 200rpx;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  top: 50%;
+  right: -50rpx;
+  animation: float 7s ease-in-out infinite;
+}
+
+/* 叶子装饰 */
+.leaf {
+  position: absolute;
+  width: 60rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: 0 100% 0 100%;
+  opacity: 0.2;
+}
+
+.leaf-1 {
+  top: 180rpx;
+  left: 60rpx;
+  transform: rotate(-30deg);
+  animation: sway 4s ease-in-out infinite;
+}
+
+.leaf-2 {
+  bottom: 300rpx;
+  right: 80rpx;
+  transform: rotate(150deg);
+  animation: sway 5s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20rpx) scale(1.05); }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(-20deg); }
+}
+
+/* 主内容区 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 120rpx 40rpx 40rpx;
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo 区域 */
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 60rpx;
+}
+
+.logo-container {
+  width: 240rpx;
+  height: 240rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8rpx 32rpx rgba(34, 197, 94, 0.15),
+    0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 32rpx;
+  animation: logoEnter 0.8s ease-out 0.2s both;
+}
+
+@keyframes logoEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.logo-image {
+  width: 180rpx;
+  height: 180rpx;
+}
+
+.company-name {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #166534;
+  letter-spacing: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.company-slogan {
+  font-size: 28rpx;
+  color: #ea580c;
+  font-weight: 500;
+  letter-spacing: 4rpx;
+  margin-bottom: 16rpx;
+}
+
+.company-desc {
+  font-size: 24rpx;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 联系信息卡片 */
+.contact-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.contact-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 8rpx 0;
+  box-shadow:
+    0 4rpx 24rpx rgba(34, 197, 94, 0.1),
+    0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+  animation: cardEnter 0.6s ease-out 0.4s both;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  transition: background 0.2s ease;
+}
+
+.contact-item:active {
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.contact-divider {
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.15) 50%, transparent 100%);
+  margin: 0 32rpx;
+}
+
+.contact-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.phone-icon {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.email-icon {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.location-icon {
+  background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+}
+
+/* CSS 绘制图标 */
+.icon-phone {
+  width: 28rpx;
+  height: 28rpx;
+  border: 4rpx solid #fff;
+  border-radius: 6rpx;
+  position: relative;
+}
+
+.icon-phone::before {
+  content: '';
+  position: absolute;
+  width: 12rpx;
+  height: 4rpx;
+  background: #fff;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 2rpx;
+}
+
+.icon-email {
+  width: 32rpx;
+  height: 24rpx;
+  border: 4rpx solid #fff;
+  border-radius: 4rpx;
+  position: relative;
+}
+
+.icon-email::before {
+  content: '';
+  position: absolute;
+  width: 20rpx;
+  height: 20rpx;
+  border-top: 4rpx solid #fff;
+  border-right: 4rpx solid #fff;
+  transform: rotate(-45deg);
+  top: -2rpx;
+  left: 2rpx;
+}
+
+.icon-location {
+  width: 24rpx;
+  height: 32rpx;
+  background: #fff;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  position: relative;
+}
+
+.icon-location::before {
+  content: '';
+  position: absolute;
+  width: 10rpx;
+  height: 10rpx;
+  background: #65a30d;
+  border-radius: 50%;
+  top: 8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.icon-location::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 12rpx solid transparent;
+  border-right: 12rpx solid transparent;
+  border-top: 16rpx solid #fff;
+  bottom: -12rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.contact-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.contact-label {
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-bottom: 4rpx;
+}
+
+.contact-value {
+  font-size: 28rpx;
+  color: #374151;
+  font-weight: 500;
+}
+
+.contact-value.address {
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+/* 联系电话样式 */
+.contact-item-phone {
+  align-items: flex-start;
+}
+
+.contact-item-phone:active {
+  background: transparent;
+}
+
+.contact-item-phone .contact-icon {
+  margin-top: 4rpx;
+}
+
+.phone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.phone-number {
+  font-size: 28rpx;
+  color: #166534;
+  font-weight: 500;
+  padding: 8rpx 16rpx;
+  background: rgba(34, 197, 94, 0.08);
+  border-radius: 8rpx;
+  transition: all 0.2s ease;
+}
+
+.phone-number:active {
+  background: rgba(34, 197, 94, 0.2);
+  transform: scale(0.98);
+}
+
+.contact-arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-top: 3rpx solid #d1d5db;
+  border-right: 3rpx solid #d1d5db;
+  transform: rotate(45deg);
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+/* 进入按钮 */
+.enter-section {
+  padding: 40rpx 0 60rpx;
+  animation: btnEnter 0.6s ease-out 0.6s both;
+}
+
+@keyframes btnEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-btn {
+  width: 100%;
+  height: 100rpx;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: 50rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow:
+    0 8rpx 24rpx rgba(34, 197, 94, 0.3),
+    0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.enter-btn::after {
+  border: none;
+}
+
+.enter-btn:active {
+  transform: scale(0.98);
+  box-shadow:
+    0 4rpx 16rpx rgba(34, 197, 94, 0.2),
+    0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+}
+
+.enter-btn text {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+}
+
+.btn-arrow {
+  width: 20rpx;
+  height: 20rpx;
+  border-top: 4rpx solid #fff;
+  border-right: 4rpx solid #fff;
+  transform: rotate(45deg);
+  margin-left: 16rpx;
+  animation: arrowMove 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowMove {
+  0%, 100% { transform: rotate(45deg) translateX(0); }
+  50% { transform: rotate(45deg) translateX(6rpx); }
+}
+
+/* 底部版权 */
+.footer {
+  padding: 32rpx;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.footer text {
+  font-size: 22rpx;
+  color: #9ca3af;
+}

@@ -1,0 +1,61 @@
+<view class="page-container {{loaded ? 'loaded' : ''}}" aria-label="易德冷链产品中心">
+  <!-- 返回按钮（左上角） -->
+  <view class="back-btn" bindtap="goBack" aria-label="返回首页">
+    <view class="back-arrow"></view>
+  </view>
+
+  <scroll-view class="main-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 品牌区域（居中） -->
+    <view class="brand-section">
+      <image class="brand-logo" src="/images/logo.png" mode="aspectFit" aria-label="易德冷链Logo" />
+      <text class="welcome-text" wx:if="{{userInfo}}">你好，{{userInfo.realName || userInfo.username}}</text>
+    </view>
+
+    <!-- 产品网格 2x2 -->
+    <view class="section-title">产品报价</view>
+    <view class="product-grid">
+      <view
+        wx:for="{{devices}}"
+        wx:key="id"
+        class="product-card {{item.available ? 'active' : 'disabled'}}"
+        bindtap="onDeviceTap"
+        data-id="{{item.id}}"
+        aria-label="{{item.name}} {{item.available ? '' : '敬请期待'}}"
+      >
+        <!-- 图标 -->
+        <view class="product-icon icon-{{item.id}}">
+          <view class="icon-inner"></view>
+        </view>
+
+        <!-- 产品信息 -->
+        <text class="product-name">{{item.name}}</text>
+        <text class="product-desc">{{item.desc}}</text>
+
+        <!-- 状态标签 -->
+        <view class="status-tag {{item.available ? 'available' : 'coming'}}">
+          <text>{{item.available ? '立即使用' : '敬请期待'}}</text>
+          <view class="tag-arrow" wx:if="{{item.available}}"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷操作 -->
+    <view class="section-title">快捷操作</view>
+    <view class="quick-actions">
+      <view
+        class="quick-item"
+        wx:for="{{quickActions}}"
+        wx:key="id"
+        bindtap="onQuickAction"
+        data-id="{{item.id}}"
+      >
+        <view class="quick-icon-wrap">
+          <text class="quick-icon">{{item.icon}}</text>
+        </view>
+        <text class="quick-name">{{item.name}}</text>
+      </view>
+    </view>
+
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+</view>

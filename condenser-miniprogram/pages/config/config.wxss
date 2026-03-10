@@ -1,0 +1,213 @@
+/* 系统配置页 - 生态未来主义风格 */
+
+page {
+  background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 50%, #f5f5f5 100%);
+}
+
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 导航栏 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  padding: 88rpx 30rpx 20rpx;
+  background: linear-gradient(180deg, #f0fdf4 0%, transparent 100%);
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  margin-right: 20rpx;
+}
+
+.back-btn:active {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.back-arrow {
+  width: 18rpx;
+  height: 18rpx;
+  border-left: 4rpx solid #22c55e;
+  border-bottom: 4rpx solid #22c55e;
+  transform: rotate(45deg);
+  margin-left: 6rpx;
+}
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #166534;
+}
+
+/* 内容区域 */
+.content-area {
+  flex: 1;
+  padding: 0 30rpx;
+}
+
+/* 区块标题 */
+.section-header {
+  padding: 24rpx 0 12rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #166534;
+}
+
+/* 卡片 */
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20rpx;
+  padding: 8rpx 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(34, 197, 94, 0.08);
+}
+
+/* 配置项 */
+.config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f3f4f6;
+}
+
+.config-item:last-child {
+  border-bottom: none;
+}
+
+.config-item.clickable:active {
+  background: rgba(34, 197, 94, 0.05);
+  margin: 0 -24rpx;
+  padding: 24rpx;
+}
+
+.config-info {
+  flex: 1;
+}
+
+.config-name {
+  display: block;
+  font-size: 28rpx;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.config-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+.config-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.config-input {
+  width: 160rpx;
+  height: 64rpx;
+  padding: 0 16rpx;
+  text-align: right;
+  background: rgba(34, 197, 94, 0.08);
+  border: 2rpx solid rgba(34, 197, 94, 0.2);
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: #166534;
+  font-weight: 600;
+}
+
+.config-input:focus {
+  border-color: #22c55e;
+  background: #fff;
+}
+
+.config-unit {
+  font-size: 24rpx;
+  color: #6b7280;
+  min-width: 60rpx;
+}
+
+.config-arrow {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.logistics-count {
+  font-size: 24rpx;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 4rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.link-text {
+  font-size: 24rpx;
+  color: #22c55e;
+}
+
+.arrow-icon {
+  width: 16rpx;
+  height: 16rpx;
+  border-right: 3rpx solid #9ca3af;
+  border-bottom: 3rpx solid #9ca3af;
+  transform: rotate(-45deg);
+}
+
+/* 提示 */
+.import-tip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f3f4f6;
+}
+
+.tip-icon {
+  font-size: 28rpx;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+/* 信息行 */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f3f4f6;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #374151;
+}
+
+.bottom-placeholder {
+  height: 60rpx;
+}

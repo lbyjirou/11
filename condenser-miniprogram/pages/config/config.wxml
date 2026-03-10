@@ -1,0 +1,109 @@
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">系统配置</text>
+  </view>
+
+  <scroll-view class="content-area" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 价格参数 -->
+    <view class="section-header">
+      <text class="section-title">价格参数</text>
+    </view>
+    <view class="card">
+      <view class="config-item">
+        <view class="config-info">
+          <text class="config-name">当日铝锭价</text>
+          <text class="config-desc">影响所有材料成本计算</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="digit" value="{{aluminumPrice}}" bindinput="onAluminumPriceInput" bindblur="saveAluminumPrice" />
+          <text class="config-unit">元/KG</text>
+        </view>
+      </view>
+
+      <view class="config-item">
+        <view class="config-info">
+          <text class="config-name">材料损耗比</text>
+          <text class="config-desc">材料计算时的损耗系数</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="digit" value="{{lossRatio}}" bindinput="onLossRatioInput" bindblur="saveLossRatio" />
+          <text class="config-unit"></text>
+        </view>
+      </view>
+
+      <view class="config-item">
+        <view class="config-info">
+          <text class="config-name">默认利润率</text>
+          <text class="config-desc">报价单默认利润百分比</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="digit" value="{{profitRate}}" bindinput="onProfitRateInput" bindblur="saveProfitRate" />
+          <text class="config-unit">%</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 物流数据 -->
+    <view class="section-header">
+      <text class="section-title">物流数据</text>
+    </view>
+    <view class="card">
+      <view class="config-item clickable" bindtap="showLogisticsInfo">
+        <view class="config-info">
+          <text class="config-name">物流报价表</text>
+          <text class="config-desc">当前数据年份：{{logisticsYear || '未导入'}}</text>
+        </view>
+        <view class="config-arrow">
+          <text class="logistics-count" wx:if="{{logisticsCount}}">{{logisticsCount}}条</text>
+          <view class="arrow-icon"></view>
+        </view>
+      </view>
+
+      <view class="import-tip">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">物流数据需要通过后台管理系统导入 Excel 文件</text>
+      </view>
+    </view>
+
+    <!-- 数据来源 -->
+    <view class="section-header">
+      <text class="section-title">数据来源</text>
+    </view>
+    <view class="card">
+      <view class="config-item clickable" bindtap="copyLink" data-url="https://www.ccmn.cn/">
+        <view class="config-info">
+          <text class="config-name">长江有色金属网</text>
+          <text class="config-desc">铝锭价格参考来源</text>
+        </view>
+        <view class="config-arrow">
+          <text class="link-text">复制链接</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 系统信息 -->
+    <view class="section-header">
+      <text class="section-title">系统信息</text>
+    </view>
+    <view class="card">
+      <view class="info-row">
+        <text class="info-label">系统版本</text>
+        <text class="info-value">v2.0.0</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">后端地址</text>
+        <text class="info-value">{{backendUrl}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">当前用户</text>
+        <text class="info-value">{{currentUser}}</text>
+      </view>
+    </view>
+
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+</view>

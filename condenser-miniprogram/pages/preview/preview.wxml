@@ -1,0 +1,177 @@
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">报价预览</text>
+  </view>
+
+  <scroll-view class="content-area" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 客户信息 -->
+    <view class="section-header">
+      <text class="section-title">客户信息</text>
+    </view>
+    <view class="card">
+      <view class="form-item">
+        <text class="form-label">客户名称</text>
+        <input class="form-input" value="{{customerName}}" bindinput="onCustomerNameInput" placeholder="请输入客户名称" />
+      </view>
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="form-label">联系人</text>
+          <input class="form-input" value="{{contactPerson}}" bindinput="onContactPersonInput" placeholder="请输入" />
+        </view>
+        <view class="form-item half">
+          <text class="form-label">联系电话</text>
+          <input class="form-input" value="{{contactPhone}}" bindinput="onContactPhoneInput" placeholder="请输入" />
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="form-item half">
+          <text class="form-label">产品数量</text>
+          <input class="form-input" type="number" value="{{quantity}}" bindinput="onQuantityInput" />
+        </view>
+        <view class="form-item half">
+          <text class="form-label">有效期（天）</text>
+          <input class="form-input" type="number" value="{{validDays}}" bindinput="onValidDaysInput" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 产品规格 -->
+    <view class="section-header">
+      <text class="section-title">产品规格</text>
+    </view>
+    <view class="card">
+      <view class="spec-row">
+        <text class="spec-label">产品类型</text>
+        <text class="spec-value">{{productType}}</text>
+      </view>
+      <view class="spec-row">
+        <text class="spec-label">规格组合</text>
+        <text class="spec-value">{{productSpec}}</text>
+      </view>
+    </view>
+
+    <!-- 成本明细 -->
+    <view class="section-header">
+      <text class="section-title">成本明细</text>
+      <text class="section-hint">（点击单价可编辑）</text>
+    </view>
+    <view class="card">
+      <!-- 材料列表 -->
+      <view class="cost-table">
+        <view class="table-header">
+          <text class="col-name">项目</text>
+          <text class="col-price">单价</text>
+          <text class="col-qty">数量</text>
+          <text class="col-subtotal">小计</text>
+        </view>
+
+        <!-- 集流管 -->
+        <view class="table-row" wx:if="{{collector.name}}">
+          <text class="col-name">集流管 {{collector.name}}</text>
+          <input class="col-price editable" type="digit" value="{{collector.unitPrice}}" data-field="collector.unitPrice" bindinput="onCostInput" />
+          <text class="col-qty">×{{collector.count}}</text>
+          <text class="col-subtotal">{{collector.subtotal}}</text>
+        </view>
+
+        <!-- 翅片 -->
+        <view class="table-row" wx:if="{{fin.name}}">
+          <text class="col-name">翅片 {{fin.name}}</text>
+          <input class="col-price editable" type="digit" value="{{fin.unitPrice}}" data-field="fin.unitPrice" bindinput="onCostInput" />
+          <text class="col-qty">×{{fin.count}}</text>
+          <text class="col-subtotal">{{fin.subtotal}}</text>
+        </view>
+
+        <!-- 扁管 -->
+        <view class="table-row" wx:if="{{tube.name}}">
+          <text class="col-name">扁管 {{tube.name}}{{tube.isZinc ? '(喷锌)' : ''}}</text>
+          <input class="col-price editable" type="digit" value="{{tube.unitPrice}}" data-field="tube.unitPrice" bindinput="onCostInput" />
+          <text class="col-qty">×{{tube.count}}</text>
+          <text class="col-subtotal">{{tube.subtotal}}</text>
+        </view>
+
+        <view class="table-subtotal">
+          <text>材料成本</text>
+          <text class="subtotal-value">{{materialCost}} 元</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 其他费用 -->
+    <view class="section-header">
+      <text class="section-title">其他费用</text>
+    </view>
+    <view class="card">
+      <view class="fee-item">
+        <text class="fee-label">制造费用</text>
+        <view class="fee-input-wrap">
+          <input class="fee-input" type="digit" value="{{mfgCost}}" bindinput="onMfgCostInput" />
+          <text class="fee-unit">元</text>
+        </view>
+      </view>
+      <view class="fee-item">
+        <text class="fee-label">运费</text>
+        <view class="fee-input-wrap">
+          <input class="fee-input" type="digit" value="{{freight}}" bindinput="onFreightInput" />
+          <text class="fee-unit">元</text>
+        </view>
+      </view>
+      <view class="fee-item">
+        <text class="fee-label">利润率</text>
+        <view class="fee-input-wrap">
+          <input class="fee-input" type="digit" value="{{profitRate}}" bindinput="onProfitRateInput" />
+          <text class="fee-unit">%</text>
+        </view>
+      </view>
+      <view class="fee-item readonly">
+        <text class="fee-label">利润</text>
+        <text class="fee-value">{{profit}} 元</text>
+      </view>
+    </view>
+
+    <!-- 报价汇总 -->
+    <view class="summary-card">
+      <view class="summary-row">
+        <text class="summary-label">成本小计</text>
+        <text class="summary-value">{{subtotal}} 元</text>
+      </view>
+      <view class="summary-row">
+        <text class="summary-label">利润 ({{profitRate}}%)</text>
+        <text class="summary-value">{{profit}} 元</text>
+      </view>
+      <view class="summary-row">
+        <text class="summary-label">运费</text>
+        <text class="summary-value">{{freight}} 元</text>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-row total">
+        <text class="summary-label">最终报价</text>
+        <text class="summary-value">{{finalPrice}} 元</text>
+      </view>
+      <view class="summary-row unit" wx:if="{{quantity > 1}}">
+        <text class="summary-label">单台价格</text>
+        <text class="summary-value">{{unitPrice}} 元/台</text>
+      </view>
+    </view>
+
+    <!-- 备注 -->
+    <view class="section-header">
+      <text class="section-title">备注</text>
+    </view>
+    <view class="card">
+      <textarea class="remark-input" value="{{remark}}" bindinput="onRemarkInput" placeholder="添加备注信息..." maxlength="500" />
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="fixed-bottom">
+    <button class="btn-secondary" bindtap="goBack">返回修改</button>
+    <button class="btn-primary" bindtap="confirmExport">确认导出</button>
+  </view>
+</view>

@@ -1,0 +1,7 @@
+<view class="bin-packing-3d-container">
+  <canvas type="webgl" id="binPackingCanvas" class="bin-packing-canvas" bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
+  <cover-view class="truck-info" wx:if="{{currentTruck}}">
+    <cover-view class="truck-type">{{currentTruck.truckType}} {{currentTruck.truckStyle}}</cover-view>
+    <cover-view class="truck-util">装载率: {{currentTruck.utilization}}%</cover-view>
+  </cover-view>
+</view>

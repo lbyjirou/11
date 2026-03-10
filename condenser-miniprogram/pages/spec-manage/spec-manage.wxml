@@ -1,0 +1,331 @@
+<view class="page-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">零件模版管理</text>
+  </view>
+
+  <!-- 模版列表视图 -->
+  <block wx:if="{{!editingPartPreset}}">
+    <!-- 分类 Tab -->
+    <view class="pm-tabs">
+      <view class="pm-tab {{presetManagerTab === 'ALL' ? 'active' : ''}}" bindtap="switchPresetManagerTab" data-tab="ALL">全部</view>
+      <view class="pm-tab {{presetManagerTab === 'A' ? 'active' : ''}}" bindtap="switchPresetManagerTab" data-tab="A">A类</view>
+      <view class="pm-tab {{presetManagerTab === 'B' ? 'active' : ''}}" bindtap="switchPresetManagerTab" data-tab="B">B类</view>
+      <view class="pm-tab {{presetManagerTab === 'C' ? 'active' : ''}}" bindtap="switchPresetManagerTab" data-tab="C">C类</view>
+      <view class="pm-tab {{presetManagerTab === 'D' ? 'active' : ''}}" bindtap="switchPresetManagerTab" data-tab="D">D类</view>
+    </view>
+
+    <!-- 模版列表 -->
+    <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="preset-list">
+        <view class="preset-item" wx:for="{{partPresets}}" wx:key="id" wx:if="{{presetManagerTab === 'ALL' || item.category === presetManagerTab}}">
+          <view class="preset-info">
+            <text class="preset-name">{{item.partNo ? item.partNo + ' ' : ''}}{{item.name}}</text>
+            <text class="preset-cat">{{item.category}}类</text>
+          </view>
+          <view class="preset-actions">
+            <view class="preset-btn" catchtap="copyPartPreset" data-id="{{item.id}}">复制</view>
+            <view class="preset-btn" catchtap="editPartPreset" data-id="{{item.id}}">编辑</view>
+            <view class="preset-btn danger" catchtap="deletePartPreset" data-id="{{item.id}}">删除</view>
+          </view>
+        </view>
+        <view wx:if="{{!partPresets.length && !loading}}" class="empty-state">
+          <text class="empty-icon">📋</text>
+          <text class="empty-text">暂无模版，点击下方按钮创建</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 新建按钮 -->
+    <view class="fab-btn" bindtap="newPartPreset">+ 新建模版</view>
+  </block>
+
+  <!-- 模版编辑表单 -->
+  <block wx:if="{{editingPartPreset}}">
+    <scroll-view class="edit-area" scroll-y enhanced show-scrollbar="{{false}}">
+      <view class="edit-form">
+        <view class="form-item" wx:if="{{partPresetForm.category !== 'D'}}">
+          <text class="form-label">零件编号</text>
+          <input class="form-input" value="{{partPresetForm.partNo}}" bindinput="onPresetFormInput" data-field="partNo" placeholder="如：P001" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">{{partPresetForm.category === 'D' ? '材料名' : '零件名称'}}</text>
+          <input class="form-input" value="{{partPresetForm.name}}" bindinput="onPresetFormInput" data-field="name" placeholder="{{partPresetForm.category === 'D' ? '如：围板箱、内包材' : '如：集流管、扁管、翅片'}}" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">所属分类</text>
+          <picker bindchange="onPresetCategoryChange" range="{{['A类', 'B类', 'C类', 'D类']}}">
+            <view class="form-input picker-display">{{partPresetForm.category}}类</view>
+          </picker>
+        </view>
+        <view class="form-item" wx:if="{{partPresetForm.category !== 'D'}}">
+          <text class="form-label">默认材质</text>
+          <input class="form-input" value="{{partPresetForm.material}}" bindinput="onPresetFormInput" data-field="material" placeholder="如：3003铝合金" />
+        </view>
+        <view class="form-item" wx:if="{{partPresetForm.category === 'D'}}">
+          <text class="form-label">材质</text>
+          <input class="form-input" value="{{partPresetForm.material}}" bindinput="onPresetFormInput" data-field="material" placeholder="如：塑板、纸板" />
+        </view>
+
+        <!-- 加工费设置（D类不显示） -->
+        <block wx:if="{{partPresetForm.category !== 'D'}}">
+        <view class="form-item">
+          <view class="form-label-row">
+            <text class="form-label">材料加工费</text>
+            <switch checked="{{partPresetForm.hasProcessFee}}" bindchange="onPresetProcessFeeToggle" color="#22c55e" style="transform:scale(0.7)" />
+          </view>
+        </view>
+        <block wx:if="{{partPresetForm.hasProcessFee}}">
+          <view class="form-item-row">
+            <view class="form-item-half" style="position:relative;">
+              <text class="form-label-sm">加工费名称</text>
+              <input class="form-input" value="{{partPresetForm.processFeeLabel}}" bindinput="onProcessFeeLabelInput" bindblur="hideProcessFeeDropdown" placeholder="输入搜索" />
+              <view class="pf-dropdown" wx:if="{{showProcessFeeDropdown}}">
+                <view class="pf-dropdown-item" wx:for="{{processFeeSearchResults}}" wx:key="id" catchtap="selectProcessFeePreset" data-idx="{{index}}">
+                  <text class="pf-dropdown-label">{{item.label}}</text>
+                  <text class="pf-dropdown-rate" wx:if="{{item.defaultRate}}">{{item.defaultRate}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="form-item-half">
+              <text class="form-label-sm">默认费率</text>
+              <input class="form-input" type="digit" value="{{partPresetForm.processFeeDefault}}" bindinput="onPresetFormInput" data-field="processFeeDefault" placeholder="0" />
+            </view>
+          </view>
+          <view class="mc-vars-display" style="margin-top:12rpx;">
+            <view class="mc-vars-grid">
+              <view class="mc-var-item">
+                <text class="mc-var-label">加工费值</text>
+                <text class="mc-var-value">{{partPresetForm.processFeeDefault || '0'}}</text>
+                <text class="mc-var-name">processFee</text>
+              </view>
+              <view class="mc-var-item">
+                <text class="mc-var-label">铝价</text>
+                <text class="mc-var-value">全局变量</text>
+                <text class="mc-var-name">alPrice</text>
+              </view>
+            </view>
+          </view>
+          <view class="pf-save-btn" catchtap="openProcessFeePresetModal">预存管理</view>
+        </block>
+        </block>
+
+        <!-- 材料预算系数内联选择（D类不显示） -->
+        <view class="mc-inline-section" wx:if="{{partPresetForm.category !== 'D'}}">
+          <view class="form-label-row">
+            <text class="form-label">材料预算系数</text>
+            <view class="mc-manage-btn" catchtap="openMaterialCostModal">材料预算系数</view>
+          </view>
+          <!-- 已锁定状态 -->
+          <block wx:if="{{partPresetForm.mcSelectedSpec && mcTypeLocked}}">
+            <view class="mc-locked-bar">
+              <view class="mc-locked-info">
+                <text class="mc-locked-type">{{partPresetForm.mcSelectedLabel}}</text>
+              </view>
+              <view class="mc-locked-actions">
+                <view class="mc-manage-btn" catchtap="unlockMcType">更改</view>
+                <text class="mc-selected-clear" catchtap="clearMcSelected">×</text>
+              </view>
+            </view>
+            <view class="mc-spec-picker" style="position:relative;margin-top:12rpx;">
+              <input class="form-input" value="{{mcInlineSearch}}" bindinput="onMcInlineSearchInput" bindfocus="showMcInlineDropdown" bindblur="hideMcInlineDropdown" placeholder="搜索更换规格..." />
+              <view class="mc-spec-dropdown" wx:if="{{mcInlineDropdownVisible && mcInlineFilteredList.length}}">
+                <view class="mc-spec-option" wx:for="{{mcInlineFilteredList}}" wx:key="id" catchtap="onMcInlineSelect" data-idx="{{index}}">
+                  <text class="mc-spec-name">{{item.spec}}</text>
+                  <text class="mc-spec-meta">系数:{{item.factor || '-'}} {{partPresetForm.mcSelectedType === 'FIN' ? '料厚:' + (item.thickness || '-') : '重量:' + (item.weight || '-')}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="mc-vars-display" style="margin-top:12rpx;">
+              <view class="mc-vars-grid">
+                <view class="mc-var-item">
+                  <text class="mc-var-label">计量系数</text>
+                  <text class="mc-var-value">{{partPresetForm.mcSelectedFactor || '-'}}</text>
+                  <text class="mc-var-name">mcFactor</text>
+                </view>
+                <view class="mc-var-item" wx:if="{{partPresetForm.mcSelectedType === 'FIN'}}">
+                  <text class="mc-var-label">料厚</text>
+                  <text class="mc-var-value">{{partPresetForm.mcSelectedThickness || '-'}}</text>
+                  <text class="mc-var-name">mcThickness</text>
+                </view>
+                <view class="mc-var-item" wx:else>
+                  <text class="mc-var-label">重量</text>
+                  <text class="mc-var-value">{{partPresetForm.mcSelectedWeight || '-'}}</text>
+                  <text class="mc-var-name">mcWeight</text>
+                </view>
+              </view>
+            </view>
+          </block>
+          <!-- 未锁定状态 -->
+          <block wx:else>
+            <view class="mc-type-tabs">
+              <view class="mc-type-tab {{partPresetForm.mcSelectedType === 'COLLECTOR' ? 'active' : ''}}" catchtap="onMcInlineTypeSelect" data-type="COLLECTOR">集流管</view>
+              <view class="mc-type-tab {{partPresetForm.mcSelectedType === 'FIN' ? 'active' : ''}}" catchtap="onMcInlineTypeSelect" data-type="FIN">翅片</view>
+              <view class="mc-type-tab {{partPresetForm.mcSelectedType === 'TUBE' ? 'active' : ''}}" catchtap="onMcInlineTypeSelect" data-type="TUBE">扁管</view>
+              <view class="mc-type-tab {{partPresetForm.mcSelectedType === 'FOLD_TUBE' ? 'active' : ''}}" catchtap="onMcInlineTypeSelect" data-type="FOLD_TUBE">折叠扁管</view>
+              <view class="mc-type-tab {{!partPresetForm.mcSelectedType ? 'active none' : 'none'}}" catchtap="clearMcSelected">不选</view>
+            </view>
+            <block wx:if="{{partPresetForm.mcSelectedType}}">
+              <view class="mc-spec-picker" style="position:relative;">
+                <input class="form-input" value="{{mcInlineSearch}}" bindinput="onMcInlineSearchInput" bindfocus="showMcInlineDropdown" bindblur="hideMcInlineDropdown" placeholder="搜索或选择规格..." />
+                <view class="mc-spec-dropdown" wx:if="{{mcInlineDropdownVisible && mcInlineFilteredList.length}}">
+                  <view class="mc-spec-option" wx:for="{{mcInlineFilteredList}}" wx:key="id" catchtap="onMcInlineSelect" data-idx="{{index}}">
+                    <text class="mc-spec-name">{{item.spec}}</text>
+                    <text class="mc-spec-meta">系数:{{item.factor || '-'}} {{partPresetForm.mcSelectedType === 'FIN' ? '料厚:' + (item.thickness || '-') : '重量:' + (item.weight || '-')}}</text>
+                  </view>
+                </view>
+              </view>
+            </block>
+          </block>
+        </view>
+
+        <view class="form-label" style="margin-top:20rpx;margin-bottom:12rpx;">变量列表</view>
+        <block wx:for="{{partPresetForm.params}}" wx:key="_uid">
+          <view wx:if="{{index === 0 || item.group !== partPresetForm.params[index - 1].group}}" class="preset-group-row">
+            <input class="preset-group-input" value="{{item.group}}" bindinput="onPresetParamInput" data-idx="{{index}}" data-field="group" placeholder="分组名称（如：材料规格）" />
+          </view>
+          <view class="preset-var-item">
+            <input class="preset-var-input name" value="{{item.label}}" bindinput="onPresetParamInput" data-idx="{{index}}" data-field="label" placeholder="名称" />
+            <input class="preset-var-input key" value="{{item.key}}" bindinput="onPresetParamInput" data-idx="{{index}}" data-field="key" placeholder="变量名" />
+            <input class="preset-var-input unit" value="{{item.unit}}" bindinput="onPresetParamInput" data-idx="{{index}}" data-field="unit" placeholder="单位" />
+            <picker class="preset-var-role" bindchange="onPresetParamRoleChange" data-idx="{{index}}" range="{{['输入', '输出']}}">
+              <view class="cp-col-tag {{item.role === 'output' ? 'output' : 'input'}}">{{item.role === 'output' ? '输出' : '输入'}}</view>
+            </picker>
+            <view class="cp-col-btn danger" catchtap="deletePresetParam" data-idx="{{index}}">×</view>
+          </view>
+          <view wx:if="{{item.role === 'input'}}" class="preset-var-default">
+            <text class="preset-var-default-label">默认值</text>
+            <input class="preset-var-input default" value="{{partPresetForm.defaultValues[item.key]}}" bindinput="onPresetDefaultInput" data-key="{{item.key}}" placeholder="不填则为空" />
+          </view>
+          <view wx:if="{{item.role === 'output'}}" class="preset-var-formula">
+            <text class="preset-var-formula-label">{{item.label}} =</text>
+            <input class="preset-var-input formula" value="{{item.formula}}" bindinput="onPresetParamInput" data-idx="{{index}}" data-field="formula" placeholder="公式，如 qty * unitPrice" />
+          </view>
+        </block>
+        <view class="cp-col-add-row">
+          <view class="cp-col-add spec" bindtap="addPresetParam" data-type="spec">+ 规格变量</view>
+          <view class="cp-col-add common" bindtap="addPresetParam" data-type="common">+ 通用变量</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部操作栏 -->
+    <view class="edit-footer">
+      <button class="btn-cancel" bindtap="cancelEditPreset">取消</button>
+      <button class="btn-confirm" bindtap="savePartPreset">保存</button>
+    </view>
+  </block>
+
+  <!-- 加载中 -->
+  <view class="loading-full" wx:if="{{loading && !partPresets.length}}">
+    <view class="loading-spinner large"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 加工费预存管理弹窗 -->
+  <view class="modal-mask" wx:if="{{showProcessFeeModal}}">
+    <view class="modal-backdrop" catchtap="closeProcessFeePresetModal"></view>
+    <view class="modal-content" style="max-height:80vh;overflow-y:auto;">
+      <view class="modal-header">
+        <text class="modal-title">加工费预存管理</text>
+      </view>
+      <view class="pfm-list" wx:if="{{processFeePresets.length}}">
+        <view class="pfm-item" wx:for="{{processFeePresets}}" wx:key="id">
+          <view class="pfm-info">
+            <text class="pfm-label">{{item.label}}</text>
+            <text class="pfm-rate" wx:if="{{item.defaultRate}}">费率: {{item.defaultRate}}</text>
+          </view>
+          <view class="pfm-actions">
+            <text class="pfm-btn pfm-edit" catchtap="editPfPresetItem" data-idx="{{index}}">编辑</text>
+            <text class="pfm-btn pfm-del" catchtap="deletePfPresetItem" data-idx="{{index}}">删除</text>
+          </view>
+        </view>
+      </view>
+      <view class="pfm-empty" wx:if="{{!processFeePresets.length}}">暂无预存记录</view>
+      <view class="pfm-form">
+        <text class="pfm-form-title">{{editingProcessFeePreset ? '编辑' : '新增'}}</text>
+        <view class="form-item-row">
+          <view class="form-item-half">
+            <text class="form-label-sm">名称</text>
+            <input class="form-input" value="{{pfModalForm.label}}" bindinput="onPfModalInput" data-field="label" placeholder="加工费名称" />
+          </view>
+          <view class="form-item-half">
+            <text class="form-label-sm">默认费率</text>
+            <input class="form-input" type="digit" value="{{pfModalForm.defaultRate}}" bindinput="onPfModalInput" data-field="defaultRate" placeholder="0" />
+          </view>
+        </view>
+        <view class="pfm-form-btns">
+          <view class="pf-save-btn" catchtap="savePfModalPreset">{{editingProcessFeePreset ? '更新' : '添加'}}</view>
+          <view class="pf-cancel-btn" wx:if="{{editingProcessFeePreset}}" catchtap="cancelPfEdit">取消</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="closeProcessFeePresetModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 材料预算系数弹窗 -->
+  <view class="modal-mask" wx:if="{{showMaterialCostModal}}">
+    <view class="modal-backdrop" catchtap="closeMaterialCostModal"></view>
+    <view class="modal-content" style="max-height:85vh;overflow-y:auto;">
+      <view class="modal-header">
+        <text class="modal-title">材料预算系数</text>
+      </view>
+      <view class="mc-tabs">
+        <view class="mc-tab {{mcPresetTab==='COLLECTOR'?'active':''}}" catchtap="switchMcTab" data-tab="COLLECTOR">集流管米重</view>
+        <view class="mc-tab {{mcPresetTab==='FIN'?'active':''}}" catchtap="switchMcTab" data-tab="FIN">翅片单波重</view>
+        <view class="mc-tab {{mcPresetTab==='TUBE'?'active':''}}" catchtap="switchMcTab" data-tab="TUBE">扁管米重</view>
+        <view class="mc-tab {{mcPresetTab==='FOLD_TUBE'?'active':''}}" catchtap="switchMcTab" data-tab="FOLD_TUBE">折叠扁管</view>
+      </view>
+      <view class="pfm-list" wx:if="{{mcPresetList.length}}">
+        <view class="pfm-item" wx:for="{{mcPresetList}}" wx:key="id">
+          <view class="pfm-info" catchtap="selectMcPreset" data-idx="{{index}}">
+            <text class="pfm-label">{{item.spec}}</text>
+            <text class="pfm-rate">系数:{{item.factor || '-'}}</text>
+            <text class="pfm-rate" wx:if="{{mcPresetTab==='FIN'}}">料厚:{{item.thickness || '-'}}</text>
+            <text class="pfm-rate" wx:else>重量:{{item.weight || '-'}}</text>
+          </view>
+          <view class="pfm-actions">
+            <text class="pfm-btn pfm-edit" catchtap="editMcPreset" data-idx="{{index}}">编辑</text>
+            <text class="pfm-btn pfm-del" catchtap="deleteMcPreset" data-idx="{{index}}">删除</text>
+          </view>
+        </view>
+      </view>
+      <view class="pfm-empty" wx:if="{{!mcPresetList.length}}">暂无预设</view>
+      <view class="pfm-form">
+        <text class="pfm-form-title">{{mcEditingPreset ? '编辑' : '新增'}}</text>
+        <view class="form-item-row">
+          <view class="form-item-half">
+            <text class="form-label-sm">规格</text>
+            <input class="form-input" value="{{mcForm.spec}}" bindinput="onMcFormInput" data-field="spec" placeholder="规格型号" />
+          </view>
+          <view class="form-item-half">
+            <text class="form-label-sm">计量系数</text>
+            <input class="form-input" type="digit" value="{{mcForm.factor}}" bindinput="onMcFormInput" data-field="factor" placeholder="0" />
+          </view>
+        </view>
+        <view class="form-item-row">
+          <view class="form-item-half" wx:if="{{mcPresetTab==='FIN'}}">
+            <text class="form-label-sm">料厚</text>
+            <input class="form-input" type="digit" value="{{mcForm.thickness}}" bindinput="onMcFormInput" data-field="thickness" placeholder="0" />
+          </view>
+          <view class="form-item-half" wx:else>
+            <text class="form-label-sm">重量(KG)</text>
+            <input class="form-input" type="digit" value="{{mcForm.weight}}" bindinput="onMcFormInput" data-field="weight" placeholder="0" />
+          </view>
+        </view>
+        <view class="pfm-form-btns">
+          <view class="pf-save-btn" catchtap="saveMcPreset">{{mcEditingPreset ? '更新' : '添加'}}</view>
+          <view class="pf-cancel-btn" wx:if="{{mcEditingPreset}}" catchtap="cancelMcEdit">取消</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="closeMaterialCostModal">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,11 @@
+USE condenser_db;
+
+CREATE TABLE IF NOT EXISTS process_template (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL COMMENT '所属用户ID',
+  name VARCHAR(100) NOT NULL COMMENT '模版名称',
+  template_json TEXT NOT NULL COMMENT '模版结构JSON(sections+summary)',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工艺模版';

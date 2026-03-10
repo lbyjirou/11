@@ -1,0 +1,42 @@
+# ============================================================
+# 冷凝器报价管理系统 - 生产环境配置
+# ============================================================
+# 重要：部署前请修改以下配置项：
+#   1. 数据库连接信息（url, username, password）
+#   2. JWT 密钥（secret）- 建议使用环境变量
+#   3. 日志级别和路径
+# ============================================================
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # TODO: 替换为生产环境数据库地址
+    url: jdbc:mysql://localhost:3306/condenser_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=false
+    # TODO: 替换为生产环境数据库用户名
+    username: ${DB_USERNAME:condenser_user}
+    # TODO: 替换为生产环境数据库密码
+    password: ${DB_PASSWORD:your_secure_password}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      pool-name: CondenserHikariPool
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+jwt:
+  # TODO: 生产环境使用环境变量设置密钥
+  secret: ${JWT_SECRET:change-this-to-a-very-long-and-secure-secret-key-in-production}
+  expiration: 86400000  # 24小时
+
+logging:
+  level:
+    root: WARN
+    com.gxyide.pricing: INFO
+    org.springframework.security: WARN
+  file:
+    name: logs/condenser-pricing.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30

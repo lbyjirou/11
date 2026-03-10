@@ -1,0 +1,391 @@
+<view class="page-container">
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">蒸发器报价</text>
+  </view>
+
+  <view class="main-tabs">
+    <view class="main-tab {{mainTab === 'setting' ? 'active' : ''}}" bindtap="switchMainTab" data-tab="setting"><text>设置</text></view>
+    <view class="main-tab {{mainTab === 'custom' ? 'active' : ''}}" bindtap="switchMainTab" data-tab="custom"><text>自定义</text></view>
+    <view class="main-tab {{mainTab === 'summary' ? 'active' : ''}}" bindtap="switchMainTab" data-tab="summary"><text>汇总</text></view>
+  </view>
+
+  <view class="sub-tabs" wx:if="{{mainTab === 'custom'}}">
+    <view class="sub-tab {{calcSubTab === 'collector' ? 'active' : ''}}" bindtap="switchCalcSubTab" data-tab="collector">集流管</view>
+    <view class="sub-tab {{calcSubTab === 'fin' ? 'active' : ''}}" bindtap="switchCalcSubTab" data-tab="fin">翅片</view>
+    <view class="sub-tab {{calcSubTab === 'tube' ? 'active' : ''}}" bindtap="switchCalcSubTab" data-tab="tube">扁管</view>
+  </view>
+
+  <scroll-view class="content-area" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 设置页 -->
+    <view class="panel" wx:if="{{mainTab === 'setting'}}">
+      <view class="card">
+        <view class="card-header"><text class="card-title">铝价参数</text></view>
+        <view class="form-item">
+          <text class="form-label">当日铝锭价（元/KG）</text>
+          <input class="form-input" type="digit" value="{{alPrice}}" bindinput="onAlPriceInput" placeholder="请输入铝价" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">损耗比（如1.02）</text>
+          <input class="form-input" type="digit" value="{{lossRatio}}" bindinput="onLossRatioInput" placeholder="1.02" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">利润率（如0.1表示10%）</text>
+          <input class="form-input" type="digit" value="{{profitRate}}" bindinput="onProfitRateInput" placeholder="0.1" />
+        </view>
+        <button class="save-config-btn" bindtap="saveConfig">保存配置</button>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">数据来源</text></view>
+        <view class="info-item" bindtap="copyAlPriceLink">
+          <text class="info-text">长江有色金属网</text>
+          <text class="info-link">点击复制链接</text>
+        </view>
+        <view class="current-price">
+          <text class="price-label">当前铝价</text>
+          <text class="price-value">{{alPrice}}</text>
+          <text class="price-unit">元/KG</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自定义规格 - 集流管 -->
+    <view class="panel" wx:if="{{mainTab === 'custom' && calcSubTab === 'collector'}}">
+      <view class="card">
+        <view class="card-header"><text class="card-title">规格选择</text></view>
+        <view class="form-item">
+          <text class="form-label">预设规格</text>
+          <picker class="form-picker" bindchange="onCollectorPresetChange" value="{{collectorPresetIndex}}" range="{{collectorPresetNames}}">
+            <view class="picker-content">
+              <text>{{collectorPresetNames[collectorPresetIndex] || '-- 手动输入 --'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">尺寸参数</text></view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">截面积（mm²）</text>
+            <input class="form-input" type="digit" value="{{collectorArea}}" bindinput="onCollectorAreaInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">长度（mm）</text>
+            <input class="form-input" type="digit" value="{{collectorLen}}" bindinput="onCollectorLenInput" />
+          </view>
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">加工费用</text></view>
+        <view class="form-item">
+          <text class="form-label">加工费（元）</text>
+          <input class="form-input" type="digit" value="{{collectorFee}}" bindinput="onCollectorFeeInput" />
+        </view>
+      </view>
+      <button class="calc-btn {{isCalculating ? 'loading' : ''}}" bindtap="calcCollector" disabled="{{isCalculating}}">
+        <view class="btn-loading" wx:if="{{isCalculating}}"></view>
+        <text>{{isCalculating ? '计算中' : '计算'}}</text>
+      </button>
+      <view class="result-card" wx:if="{{collectorResult.weight > 0}}">
+        <view class="result-item">
+          <text class="result-value">{{collectorResult.weight}}</text>
+          <text class="result-label">单根重量</text>
+          <text class="result-unit">kg</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-value">{{collectorResult.unitPrice}}</text>
+          <text class="result-label">单根价格</text>
+          <text class="result-unit">元</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自定义规格 - 翅片 -->
+    <view class="panel" wx:if="{{mainTab === 'custom' && calcSubTab === 'fin'}}">
+      <view class="card">
+        <view class="card-header"><text class="card-title">规格选择</text></view>
+        <view class="form-item">
+          <text class="form-label">预设规格</text>
+          <picker class="form-picker" bindchange="onFinPresetChange" value="{{finPresetIndex}}" range="{{finPresetNames}}">
+            <view class="picker-content">
+              <text>{{finPresetNames[finPresetIndex] || '-- 手动输入 --'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">尺寸参数</text></view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">宽度（mm）</text>
+            <input class="form-input" type="digit" value="{{finWidth}}" bindinput="onFinWidthInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">单波长（mm）</text>
+            <input class="form-input" type="digit" value="{{finWaveLen}}" bindinput="onFinWaveLenInput" />
+          </view>
+        </view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">波数</text>
+            <input class="form-input" type="digit" value="{{finWaveCount}}" bindinput="onFinWaveCountInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">总波长（mm）</text>
+            <input class="form-input disabled" type="digit" value="{{finTotalWaveLen}}" disabled />
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="form-label">厚度（mm）</text>
+          <input class="form-input" type="digit" value="{{finThickness}}" bindinput="onFinThicknessInput" />
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">加工费用</text></view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">原料加工费（元）</text>
+            <input class="form-input" type="digit" value="{{finFee}}" bindinput="onFinFeeInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">部件加工费（元）</text>
+            <input class="form-input" type="digit" value="{{finPartFee}}" bindinput="onFinPartFeeInput" />
+          </view>
+        </view>
+      </view>
+      <button class="calc-btn {{isCalculating ? 'loading' : ''}}" bindtap="calcFin" disabled="{{isCalculating}}">
+        <view class="btn-loading" wx:if="{{isCalculating}}"></view>
+        <text>{{isCalculating ? '计算中' : '计算'}}</text>
+      </button>
+      <view class="result-card" wx:if="{{finResult.weight > 0}}">
+        <view class="result-item">
+          <text class="result-value">{{finResult.weight}}</text>
+          <text class="result-label">单根重量</text>
+          <text class="result-unit">kg</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-value">{{finResult.unitPrice}}</text>
+          <text class="result-label">单根价格</text>
+          <text class="result-unit">元</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自定义规格 - 扁管 -->
+    <view class="panel" wx:if="{{mainTab === 'custom' && calcSubTab === 'tube'}}">
+      <view class="card">
+        <view class="card-header"><text class="card-title">规格选择</text></view>
+        <view class="form-item">
+          <text class="form-label">预设规格</text>
+          <picker class="form-picker" bindchange="onTubePresetChange" value="{{tubePresetIndex}}" range="{{tubePresetNames}}">
+            <view class="picker-content">
+              <text>{{tubePresetNames[tubePresetIndex] || '-- 手动输入 --'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">尺寸参数</text></view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">米重（kg/m）</text>
+            <input class="form-input" type="digit" value="{{tubeMeterWeight}}" bindinput="onTubeMeterWeightInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">长度（mm）</text>
+            <input class="form-input" type="digit" value="{{tubeLen}}" bindinput="onTubeLenInput" />
+          </view>
+        </view>
+      </view>
+      <view class="card">
+        <view class="card-header"><text class="card-title">加工费用</text></view>
+        <view class="form-row">
+          <view class="form-item half">
+            <text class="form-label">普通加工费（元）</text>
+            <input class="form-input" type="digit" value="{{tubeFee}}" bindinput="onTubeFeeInput" />
+          </view>
+          <view class="form-item half">
+            <text class="form-label">喷锌加工费（元）</text>
+            <input class="form-input" type="digit" value="{{tubeZincFee}}" bindinput="onTubeZincFeeInput" />
+          </view>
+        </view>
+      </view>
+      <button class="calc-btn {{isCalculating ? 'loading' : ''}}" bindtap="calcTube" disabled="{{isCalculating}}">
+        <view class="btn-loading" wx:if="{{isCalculating}}"></view>
+        <text>{{isCalculating ? '计算中' : '计算'}}</text>
+      </button>
+      <view class="result-card triple" wx:if="{{tubeResult.weight > 0}}">
+        <view class="result-item">
+          <text class="result-value">{{tubeResult.weight}}</text>
+          <text class="result-label">单根重量</text>
+          <text class="result-unit">kg</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-value">{{tubeResult.normalPrice}}</text>
+          <text class="result-label">普通价格</text>
+          <text class="result-unit">元</text>
+        </view>
+        <view class="result-divider"></view>
+        <view class="result-item">
+          <text class="result-value">{{tubeResult.zincPrice}}</text>
+          <text class="result-label">喷锌价格</text>
+          <text class="result-unit">元</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 汇总页 -->
+    <view class="panel summary-panel" wx:if="{{mainTab === 'summary'}}">
+      <view class="section-header"><text class="section-title">主要材料</text></view>
+      <view class="material-card">
+        <view class="material-item">
+          <view class="material-info"><text class="material-name">集流管</text></view>
+          <picker class="spec-picker" bindchange="onSummaryCollectorChange" value="{{summaryCollectorIndex}}" range="{{collectorPresetNames}}">
+            <view class="spec-picker-content">
+              <text>{{collectorPresetNames[summaryCollectorIndex] || '选择规格'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+        <view class="material-detail" wx:if="{{summaryCollectorIndex > 0}}">
+          <view class="detail-row"><text class="detail-label">单价</text><text class="detail-value">¥{{summaryCollectorPrice}}</text></view>
+          <view class="detail-row"><text class="detail-label">数量</text><input class="qty-input" type="number" value="{{summaryCollectorQty}}" bindinput="onSummaryCollectorQtyInput" /></view>
+          <view class="detail-row"><text class="detail-label">小计</text><text class="detail-value highlight">¥{{summaryCollectorSubtotal}}</text></view>
+        </view>
+
+        <view class="material-item">
+          <view class="material-info"><text class="material-name">翅片</text></view>
+          <picker class="spec-picker" bindchange="onSummaryFinChange" value="{{summaryFinIndex}}" range="{{finPresetNames}}">
+            <view class="spec-picker-content">
+              <text>{{finPresetNames[summaryFinIndex] || '选择规格'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+        <view class="material-detail" wx:if="{{summaryFinIndex > 0}}">
+          <view class="detail-row"><text class="detail-label">单价</text><text class="detail-value">¥{{summaryFinPrice}}</text></view>
+          <view class="detail-row"><text class="detail-label">数量</text><input class="qty-input" type="number" value="{{summaryFinQty}}" bindinput="onSummaryFinQtyInput" /></view>
+          <view class="detail-row"><text class="detail-label">小计</text><text class="detail-value highlight">¥{{summaryFinSubtotal}}</text></view>
+        </view>
+
+        <view class="material-item">
+          <view class="material-info"><text class="material-name">扁管</text></view>
+          <picker class="spec-picker" bindchange="onSummaryTubeChange" value="{{summaryTubeIndex}}" range="{{tubePresetNames}}">
+            <view class="spec-picker-content">
+              <text>{{tubePresetNames[summaryTubeIndex] || '选择规格'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+        <view class="material-detail" wx:if="{{summaryTubeIndex > 0}}">
+          <view class="detail-row">
+            <text class="detail-label">加工方式</text>
+            <radio-group class="type-radio" bindchange="onSummaryTubeTypeChange">
+              <label class="radio-label {{summaryTubeType === 'normal' ? 'active' : ''}}"><radio value="normal" checked="{{summaryTubeType === 'normal'}}" />普通</label>
+              <label class="radio-label {{summaryTubeType === 'zinc' ? 'active' : ''}}"><radio value="zinc" checked="{{summaryTubeType === 'zinc'}}" />喷锌</label>
+            </radio-group>
+          </view>
+          <view class="detail-row"><text class="detail-label">单价</text><text class="detail-value">¥{{summaryTubePrice}}</text></view>
+          <view class="detail-row"><text class="detail-label">数量</text><input class="qty-input" type="number" value="{{summaryTubeQty}}" bindinput="onSummaryTubeQtyInput" /></view>
+          <view class="detail-row"><text class="detail-label">小计</text><text class="detail-value highlight">¥{{summaryTubeSubtotal}}</text></view>
+        </view>
+
+        <view class="subtotal-row"><text>主要材料合计</text><text class="subtotal-value">{{summaryData.materialCost}} 元</text></view>
+      </view>
+
+      <view wx:if="{{components.length}}">
+        <view class="section-header"><text class="section-title">其他部件</text></view>
+        <view class="material-card">
+          <view class="material-item" wx:for="{{components}}" wx:key="id" wx:if="{{componentExpanded || index < componentShowCount}}">
+            <view class="material-info">
+              <text class="material-name">{{item.name}}</text>
+              <text class="material-price">{{item.spec ? item.spec + ' ' : ''}}{{item.unit_price}}元</text>
+            </view>
+            <view class="material-qty"><input class="qty-input" type="number" value="{{componentQtys[item.id]}}" bindinput="onComponentQtyInput" data-id="{{item.id}}" /></view>
+            <text class="material-subtotal">{{componentSubtotals[item.id]}}元</text>
+          </view>
+          <view class="expand-btn" wx:if="{{components.length > componentShowCount}}" bindtap="toggleComponentExpand">
+            <text>{{componentExpanded ? '收起' : '展开更多（' + (components.length - componentShowCount) + '项）'}}</text>
+            <view class="expand-arrow {{componentExpanded ? 'up' : ''}}"></view>
+          </view>
+          <view class="subtotal-row"><text>其他部件合计</text><text class="subtotal-value">{{summaryData.componentCost}} 元</text></view>
+        </view>
+      </view>
+
+      <view wx:if="{{processList.length}}">
+        <view class="section-header"><text class="section-title">加工工序</text></view>
+        <view class="material-card">
+          <view class="material-item" wx:for="{{processList}}" wx:key="id">
+            <view class="material-info">
+              <text class="material-name">{{item.name}}</text>
+              <text class="material-price">{{item.unitPrice}}元/{{item.unitType}}</text>
+            </view>
+            <view class="material-qty"><input class="qty-input" type="number" value="{{processQtys[item.id]}}" bindinput="onProcessQtyInput" data-id="{{item.id}}" placeholder="0" /></view>
+            <text class="material-subtotal">{{processSubtotals[item.id] || '0.00'}}元</text>
+          </view>
+          <view class="subtotal-row"><text>工序费用合计</text><text class="subtotal-value">{{summaryData.processCost || '0.00'}} 元</text></view>
+        </view>
+      </view>
+
+      <view class="section-header"><text class="section-title">物流运费</text></view>
+      <view class="card">
+        <view class="form-item">
+          <text class="form-label">送货目的地</text>
+          <picker class="form-picker" bindchange="onDestinationChange" range="{{destinationList}}">
+            <view class="picker-content">
+              <text>{{selectedDestination || '选择目的地'}}</text>
+              <view class="picker-arrow"></view>
+            </view>
+          </picker>
+        </view>
+        <view class="logistics-result" wx:if="{{logisticsResult}}">
+          <view class="logistics-row"><text class="logistics-label">推荐方式</text><text class="logistics-value highlight">{{logisticsResult.recommendedType === 'SCATTER' ? '散货' : '整车'}}</text></view>
+          <view class="logistics-row"><text class="logistics-label">推荐物流</text><text class="logistics-value">{{logisticsResult.recommendedCompany || '-'}}</text></view>
+          <view class="logistics-row"><text class="logistics-label">运费估算</text><text class="logistics-value highlight">¥{{logisticsResult.recommendedPrice}}</text></view>
+        </view>
+        <view class="form-item">
+          <text class="form-label">实际运费（元）{{logisticsResult ? '（可修改）' : ''}}</text>
+          <input class="form-input" type="digit" value="{{freight}}" bindinput="onFreightInput" placeholder="输入运费" />
+        </view>
+        <view class="logistics-loading" wx:if="{{logisticsLoading}}">
+          <view class="loading-spinner"></view>
+          <text>正在计算物流费用...</text>
+        </view>
+      </view>
+
+      <view class="section-header"><text class="section-title">其他费用</text></view>
+      <view class="card">
+        <view class="form-item">
+          <text class="form-label">制造费用（元）</text>
+          <input class="form-input" type="digit" value="{{mfgCost}}" bindinput="onMfgCostInput" />
+        </view>
+        <view class="fee-row">
+          <text class="fee-label">利润（{{profitRate * 100}}%）</text>
+          <text class="fee-value">{{summaryData.profit}} 元</text>
+        </view>
+      </view>
+
+      <view class="final-price-card">
+        <text class="final-label">最终报价</text>
+        <view class="final-value-wrap">
+          <text class="final-value">{{summaryData.finalPrice}}</text>
+          <text class="final-unit">元</text>
+        </view>
+      </view>
+
+      <view class="bottom-placeholder"></view>
+    </view>
+  </scroll-view>
+
+  <view class="fixed-bottom" wx:if="{{mainTab === 'summary'}}">
+    <button class="export-btn" bindtap="exportQuote"><text>导出报价单</text></button>
+  </view>
+</view>

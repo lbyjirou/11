@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "bin-packing-3d": "/components/bin-packing-3d/bin-packing-3d"
+  }
+}

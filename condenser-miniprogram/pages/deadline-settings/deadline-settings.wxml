@@ -1,0 +1,81 @@
+<view class="page-container">
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">交期约束设置</text>
+  </view>
+
+  <scroll-view class="content-area" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 分配模式 -->
+    <view class="section-header">
+      <text class="section-title">分配模式</text>
+    </view>
+    <view class="card">
+      <view class="mode-switch">
+        <view class="mode-option {{mode === 'PERCENTAGE' ? 'active' : ''}}" bindtap="onModeChange" data-mode="PERCENTAGE">
+          <text>按百分比</text>
+          <text class="mode-desc">按总时长比例分配</text>
+        </view>
+        <view class="mode-option {{mode === 'FIXED_DAYS' ? 'active' : ''}}" bindtap="onModeChange" data-mode="FIXED_DAYS">
+          <text>按固定天数</text>
+          <text class="mode-desc">每环节固定天数</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 各环节配置 -->
+    <view class="section-header">
+      <text class="section-title">各环节{{mode === 'PERCENTAGE' ? '占比' : '天数'}}</text>
+      <text class="section-hint" wx:if="{{mode === 'PERCENTAGE'}}">合计需为100%，当前: {{totalPct}}%</text>
+    </view>
+    <view class="card">
+      <view class="config-item" wx:for="{{stages}}" wx:key="key">
+        <view class="config-info">
+          <text class="config-name">{{item.label}}</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="digit" value="{{item.value}}" bindinput="onStageInput" data-key="{{item.key}}" />
+          <text class="config-unit">{{mode === 'PERCENTAGE' ? '%' : '天'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 提前预警 -->
+    <view class="section-header">
+      <text class="section-title">提前预警</text>
+    </view>
+    <view class="card">
+      <view class="config-item">
+        <view class="config-info">
+          <text class="config-name">预警提前时间</text>
+          <text class="config-desc">截止前多久通知负责人</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="number" value="{{warningHours}}" bindinput="onWarningInput" />
+          <text class="config-unit">小时</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 升级通知 -->
+    <view class="section-header">
+      <text class="section-title">升级通知</text>
+    </view>
+    <view class="card">
+      <view class="config-item">
+        <view class="config-info">
+          <text class="config-name">超期后升级时间</text>
+          <text class="config-desc">超期多久后通知管理员</text>
+        </view>
+        <view class="config-input-wrap">
+          <input class="config-input" type="number" value="{{escalationHours}}" bindinput="onEscalationInput" />
+          <text class="config-unit">小时</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <view class="save-btn" bindtap="onSave">保存配置</view>
+  </scroll-view>
+</view>

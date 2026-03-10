@@ -1,0 +1,80 @@
+<view class="page">
+  <!-- 顶部操作栏 -->
+  <view class="header">
+    <text class="title">角色管理</text>
+    <button class="add-btn" size="mini" bindtap="onAddRole">新增角色</button>
+  </view>
+
+  <!-- 角色列表 -->
+  <view class="role-list">
+    <view class="role-card" wx:for="{{roles}}" wx:key="id">
+      <view class="role-info">
+        <view class="role-name">
+          {{item.roleName}}
+          <text class="role-code">({{item.roleCode}})</text>
+          <text class="system-tag" wx:if="{{item.isSystem === 1}}">系统</text>
+        </view>
+        <view class="role-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        <view class="role-stage" wx:if="{{item.workflowStage}}">流程阶段: {{item.workflowStage}}</view>
+      </view>
+      <view class="role-actions">
+        <text class="action-link" data-role="{{item}}" bindtap="onManagePerms">权限</text>
+        <text class="action-link" data-role="{{item}}" bindtap="onEditRole">编辑</text>
+        <text class="action-link danger" wx:if="{{item.isSystem !== 1}}" data-role="{{item}}" bindtap="onDeleteRole">删除</text>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{roles.length === 0}}">暂无角色数据</view>
+  </view>
+
+  <!-- 编辑角色弹层 -->
+  <view class="modal-mask" wx:if="{{editingRole}}" bindtap="onCancelEdit">
+    <view class="modal-body" catchtap="noop">
+      <view class="modal-title">{{editingRole.id ? '编辑角色' : '新增角色'}}</view>
+      <view class="form-item">
+        <text class="label">角色编码</text>
+        <input class="input" value="{{editingRole.roleCode}}" data-field="roleCode"
+          bindinput="onRoleInput" placeholder="如 SALES" disabled="{{!!editingRole.id}}" />
+      </view>
+      <view class="form-item">
+        <text class="label">角色名称</text>
+        <input class="input" value="{{editingRole.roleName}}" data-field="roleName"
+          bindinput="onRoleInput" placeholder="如 销售员" />
+      </view>
+      <view class="form-item">
+        <text class="label">描述</text>
+        <input class="input" value="{{editingRole.description}}" data-field="description"
+          bindinput="onRoleInput" placeholder="可选" />
+      </view>
+      <view class="form-item">
+        <text class="label">流程阶段</text>
+        <input class="input" value="{{editingRole.workflowStage}}" data-field="workflowStage"
+          bindinput="onRoleInput" placeholder="SALES/TECH/PROCESS/LOGISTICS/MANAGER" />
+      </view>
+      <view class="modal-footer">
+        <button class="btn cancel" size="mini" bindtap="onCancelEdit">取消</button>
+        <button class="btn confirm" size="mini" bindtap="onSaveRole">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 权限分配面板 -->
+  <view class="modal-mask" wx:if="{{showPermPanel}}" bindtap="onClosePermPanel">
+    <view class="modal-body perm-panel" catchtap="noop">
+      <view class="modal-title">分配权限</view>
+      <scroll-view scroll-y class="perm-scroll" catchtap="noop">
+        <view class="perm-group" wx:for="{{permissions}}" wx:key="name">
+          <view class="group-name">{{item.name}}</view>
+          <view class="perm-item" wx:for="{{item.items}}" wx:key="id" wx:for-item="p"
+            data-id="{{p.id}}" catchtap="onTogglePerm">
+            <view class="checkbox {{permCheckedMap[p.id] ? 'checked' : ''}}"></view>
+            <text>{{p.permName}}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="btn cancel" size="mini" catchtap="onClosePermPanel">取消</button>
+        <button class="btn confirm" size="mini" catchtap="onSavePerms">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/condenser_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Lby15224516691
+
+jwt:
+  secret: gxyide-condenser-pricing-secret-key-2025-very-long-secret-for-hs512
+  expiration: 86400000  # 24小时
+
+logging:
+  level:
+    com.gxyide.pricing: debug

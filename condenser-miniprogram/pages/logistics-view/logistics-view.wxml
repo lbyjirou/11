@@ -1,0 +1,195 @@
+<view class="page-container">
+  <!-- 自定义导航栏 -->
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">物流价格查询</text>
+    <view class="import-btn" bindtap="onImportTap" wx:if="{{canImport}}">
+      <text class="import-icon">📥</text>
+      <text class="import-text">导入</text>
+    </view>
+  </view>
+
+  <!-- 方向切换 -->
+  <view class="direction-tabs">
+    <view class="tab-item {{direction === 'OUTBOUND' ? 'active' : ''}}" bindtap="switchDirection" data-direction="OUTBOUND">
+      <text class="tab-icon">📤</text>
+      <text class="tab-text">送货（柳州→各地）</text>
+    </view>
+    <view class="tab-item {{direction === 'INBOUND' ? 'active' : ''}}" bindtap="switchDirection" data-direction="INBOUND">
+      <text class="tab-icon">📥</text>
+      <text class="tab-text">返货（各地→柳州）</text>
+    </view>
+  </view>
+
+  <!-- 有效期提示 -->
+  <view class="expire-info {{expireInfo.expired ? 'expired' : ''}}" wx:if="{{expireInfo && expireInfo.hasData}}">
+    <text class="expire-icon">{{expireInfo.expired ? '⚠️' : '📅'}}</text>
+    <view class="expire-text">
+      <text wx:if="{{expireInfo.expired}}">数据已过期，请重新导入</text>
+      <text wx:else>有效期：{{expireInfo.importTime}} → {{expireInfo.expireTime}}（剩余{{expireInfo.daysRemaining}}天）</text>
+    </view>
+  </view>
+
+  <!-- 地点选择 -->
+  <view class="location-section">
+    <view class="section-title">{{direction === 'OUTBOUND' ? '选择目的地' : '选择出发地'}} · {{locationList.length}}个城市</view>
+    <scroll-view class="location-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="location-list">
+        <view
+          class="location-tag {{selectedLocation === item ? 'active' : ''}}"
+          wx:for="{{locationList}}"
+          wx:key="*this"
+          bindtap="selectLocation"
+          data-location="{{item}}"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 价格列表 -->
+  <scroll-view class="price-area" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 提示选择 -->
+    <view class="empty-state" wx:if="{{!selectedLocation && !loading}}">
+      <text class="empty-icon">🔍</text>
+      <text class="empty-text">请选择{{direction === 'OUTBOUND' ? '目的地' : '出发地'}}</text>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
+    </view>
+
+    <!-- 无数据 -->
+    <view class="empty-state" wx:if="{{selectedLocation && !loading && priceList.length === 0}}">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无物流价格数据</text>
+    </view>
+
+    <!-- 价格卡片列表 -->
+    <view class="price-list" wx:if="{{priceList.length > 0}}">
+      <view class="route-header">
+        <text class="route-text">{{direction === 'OUTBOUND' ? '柳州' : selectedLocation}} → {{direction === 'OUTBOUND' ? selectedLocation : '柳州'}}</text>
+      </view>
+
+      <view class="company-card" wx:for="{{priceList}}" wx:key="id">
+        <view class="company-header">
+          <text class="company-name">{{item.companyName}}</text>
+          <text class="min-charge" wx:if="{{item.minChargeVal}}">最低消费: ¥{{item.minChargeVal}}</text>
+        </view>
+
+        <view class="price-grid">
+          <!-- 散货 -->
+          <view class="price-item" wx:if="{{item.priceScatter}}">
+            <text class="price-label">散货(元/m³)</text>
+            <text class="price-value">¥{{item.priceScatter}}</text>
+          </view>
+
+          <!-- 各车型整车价格 -->
+          <view class="price-item" wx:if="{{item.price42m}}">
+            <text class="price-label">4.2米整车</text>
+            <text class="price-value">¥{{item.price42m}}</text>
+          </view>
+          <view class="price-item" wx:if="{{item.price68m}}">
+            <text class="price-label">6.8米整车</text>
+            <text class="price-value">¥{{item.price68m}}</text>
+          </view>
+          <view class="price-item" wx:if="{{item.price96m}}">
+            <text class="price-label">9.6米整车</text>
+            <text class="price-value">¥{{item.price96m}}</text>
+          </view>
+          <view class="price-item" wx:if="{{item.price135m}}">
+            <text class="price-label">13.5米整车</text>
+            <text class="price-value">¥{{item.price135m}}</text>
+          </view>
+          <view class="price-item" wx:if="{{item.price175m}}">
+            <text class="price-label">17.5米整车</text>
+            <text class="price-value">¥{{item.price175m}}</text>
+          </view>
+          <view class="price-item" wx:if="{{item.price16mBox}}">
+            <text class="price-label">16米厢车</text>
+            <text class="price-value">¥{{item.price16mBox}}</text>
+          </view>
+        </view>
+
+        <!-- 散货备注 -->
+        <view class="scatter-remark" wx:if="{{item.scatterRemark}}">
+          <text class="remark-label">散货备注：</text>
+          <text class="remark-text">{{item.scatterRemark}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <!-- 导入预览弹窗 -->
+  <view class="modal-mask" wx:if="{{showPreviewModal}}" bindtap="closePreviewModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">导入预览</text>
+        <view class="modal-close" bindtap="closePreviewModal">×</view>
+      </view>
+
+      <!-- 识别状态 -->
+      <view class="recognize-status {{analyzeResult.recognized ? 'success' : 'warning'}}">
+        <text wx:if="{{analyzeResult.recognized}}">✅ 自动识别成功</text>
+        <text wx:else>⚠️ 部分字段未识别，请检查映射</text>
+      </view>
+
+      <!-- 区域列表 -->
+      <scroll-view class="regions-scroll" scroll-y>
+        <view class="region-card" wx:for="{{analyzeResult.regions}}" wx:key="index">
+          <view class="region-header">
+            <text class="region-direction">{{item.directionLabel}}</text>
+            <text class="region-info">Sheet: {{item.sheetName}} | 共{{item.totalRows}}条</text>
+          </view>
+
+          <!-- 列映射 -->
+          <view class="mapping-section">
+            <text class="mapping-title">列映射关系</text>
+            <view class="mapping-list">
+              <view class="mapping-item" wx:for="{{item.columnMapping}}" wx:for-item="col" wx:for-index="field" wx:key="field">
+                <text class="field-name">{{fieldLabels[field] || field}}</text>
+                <text class="arrow">→</text>
+                <text class="col-header">{{col.header}}</text>
+                <text class="confidence {{col.confidence}}">{{col.confidence}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 预览数据 -->
+          <view class="preview-section">
+            <text class="preview-title">数据预览（共{{item.previewData.length}}条）</text>
+            <scroll-view class="preview-table-scroll" scroll-x scroll-y style="max-height: 400rpx;">
+              <view class="preview-table">
+                <view class="preview-row header">
+                  <text class="preview-cell" wx:for="{{item.columnMapping}}" wx:for-item="col" wx:for-index="field" wx:key="field">{{fieldLabels[field] || field}}</text>
+                </view>
+                <view class="preview-row" wx:for="{{item.previewData}}" wx:for-item="row" wx:key="index">
+                  <text class="preview-cell" wx:for="{{item.columnMapping}}" wx:for-item="col" wx:for-index="field" wx:key="field">{{row[field] || '-'}}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+
+        <!-- 未映射列 -->
+        <view class="unmapped-section" wx:if="{{analyzeResult.unmappedColumns.length > 0}}">
+          <text class="unmapped-title">未映射的列（将忽略）</text>
+          <view class="unmapped-list">
+            <text class="unmapped-tag" wx:for="{{analyzeResult.unmappedColumns}}" wx:key="*this">{{item}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 操作按钮 -->
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="closePreviewModal">取消</button>
+        <button class="btn-confirm" bindtap="confirmImport" loading="{{importing}}">确认导入</button>
+      </view>
+    </view>
+  </view>
+</view>

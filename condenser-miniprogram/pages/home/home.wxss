@@ -1,0 +1,391 @@
+/* 主页样式 - 完善版 */
+
+page {
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 50%, #fef3c7 100%);
+  height: 100vh;
+}
+
+.page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  opacity: 0;
+  transition: all 0.4s ease-out;
+}
+
+.page-container.loaded {
+  opacity: 1;
+}
+
+/* 主滚动区域 */
+.main-scroll {
+  flex: 1;
+  height: 0;
+}
+
+/* ==================== 返回按钮（左上角） ==================== */
+.back-btn {
+  position: absolute;
+  top: calc(20rpx + env(safe-area-inset-top));
+  left: 24rpx;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4rpx 12rpx rgba(34, 197, 94, 0.15);
+  z-index: 10;
+}
+
+.back-btn:active {
+  background: rgba(34, 197, 94, 0.15);
+  transform: scale(0.95);
+}
+
+.back-arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-left: 4rpx solid #22c55e;
+  border-bottom: 4rpx solid #22c55e;
+  transform: rotate(45deg);
+  margin-left: 6rpx;
+}
+
+/* ==================== 品牌区域（居中） ==================== */
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(80rpx + env(safe-area-inset-top));
+  padding-bottom: 16rpx;
+}
+
+.brand-logo {
+  width: 180rpx;
+  height: 180rpx;
+}
+
+.welcome-text {
+  font-size: 26rpx;
+  color: #16a34a;
+  margin-top: 8rpx;
+}
+
+/* ==================== 分区标题 ==================== */
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #374151;
+  padding: 20rpx 24rpx 16rpx;
+}
+
+/* ==================== 产品网格 2x2 ==================== */
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  align-content: start;
+  padding: 0 24rpx;
+  gap: 20rpx;
+}
+
+.product-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 24rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow:
+    0 4rpx 20rpx rgba(34, 197, 94, 0.1),
+    0 1rpx 4rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.product-card.active {
+  border: 2rpx solid rgba(34, 197, 94, 0.3);
+}
+
+.product-card.active:active {
+  transform: scale(0.98);
+  box-shadow:
+    0 2rpx 12rpx rgba(34, 197, 94, 0.15),
+    0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+}
+
+.product-card.disabled {
+  opacity: 0.6;
+}
+
+/* ==================== 产品图标 ==================== */
+.product-icon {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10rpx;
+}
+
+/* 冷凝器图标 */
+.icon-condenser .icon-inner {
+  width: 50rpx;
+  height: 38rpx;
+  border: 4rpx solid #22c55e;
+  border-radius: 8rpx;
+  position: relative;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+}
+
+.icon-condenser .icon-inner::before {
+  content: '';
+  position: absolute;
+  top: 5rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rpx;
+  height: 24rpx;
+  background: repeating-linear-gradient(to bottom, #22c55e 0, #22c55e 4rpx, transparent 4rpx, transparent 8rpx);
+}
+
+.icon-condenser .icon-inner::after {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18rpx;
+  height: 6rpx;
+  border: 3rpx solid #22c55e;
+  border-bottom: none;
+  border-radius: 5rpx 5rpx 0 0;
+}
+
+/* 散热器图标 */
+.icon-radiator .icon-inner {
+  width: 46rpx;
+  height: 46rpx;
+  background: repeating-linear-gradient(to right, #9ca3af 0, #9ca3af 5rpx, transparent 5rpx, transparent 9rpx);
+  border-left: 4rpx solid #9ca3af;
+  border-right: 4rpx solid #9ca3af;
+  border-radius: 4rpx;
+}
+
+/* 蒸发器图标 */
+.icon-evaporator .icon-inner {
+  width: 46rpx;
+  height: 36rpx;
+  border: 4rpx solid #9ca3af;
+  border-radius: 8rpx;
+  position: relative;
+}
+
+.icon-evaporator .icon-inner::before {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  right: 4rpx;
+  height: 3rpx;
+  background: #9ca3af;
+  box-shadow: 0 9rpx 0 #9ca3af, 0 18rpx 0 #9ca3af;
+}
+
+/* 液冷板图标 */
+.icon-liquid-cooling .icon-inner {
+  width: 50rpx;
+  height: 30rpx;
+  background: linear-gradient(180deg, #9ca3af 0%, #6b7280 100%);
+  border-radius: 6rpx;
+  position: relative;
+}
+
+.icon-liquid-cooling .icon-inner::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 5rpx;
+  right: 5rpx;
+  height: 2rpx;
+  background: #fff;
+  transform: translateY(-50%);
+  box-shadow: 0 -7rpx 0 #fff, 0 7rpx 0 #fff;
+}
+
+/* ==================== 产品信息 ==================== */
+.product-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4rpx;
+}
+
+.product-card.disabled .product-name {
+  color: #9ca3af;
+}
+
+.product-desc {
+  font-size: 18rpx;
+  color: #9ca3af;
+  margin-bottom: 10rpx;
+}
+
+/* ==================== 状态标签 ==================== */
+.status-tag {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 12rpx;
+  border-radius: 20rpx;
+}
+
+.status-tag.available {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+}
+
+.status-tag.available text {
+  font-size: 18rpx;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.tag-arrow {
+  width: 10rpx;
+  height: 10rpx;
+  border-top: 2rpx solid #16a34a;
+  border-right: 2rpx solid #16a34a;
+  transform: rotate(45deg);
+  margin-left: 6rpx;
+  animation: arrowBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowBounce {
+  0%, 100% { transform: rotate(45deg) translateX(0); }
+  50% { transform: rotate(45deg) translateX(3rpx); }
+}
+
+.status-tag.coming {
+  background: rgba(156, 163, 175, 0.1);
+}
+
+.status-tag.coming text {
+  font-size: 18rpx;
+  color: #9ca3af;
+}
+
+/* ==================== 快捷操作 ==================== */
+.quick-actions {
+  display: flex;
+  padding: 0 24rpx;
+  gap: 16rpx;
+}
+
+.quick-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.quick-item:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.quick-icon-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.quick-icon {
+  font-size: 36rpx;
+}
+
+.badge {
+  position: absolute;
+  top: -10rpx;
+  right: -16rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  padding: 0 8rpx;
+  font-size: 20rpx;
+  color: #fff;
+  background: #f97316;
+  border-radius: 16rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.quick-name {
+  font-size: 22rpx;
+  color: #6b7280;
+  margin-top: 8rpx;
+}
+
+/* ==================== 最近报价 ==================== */
+.recent-quotes {
+  padding: 0 24rpx;
+}
+
+.quote-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16rpx;
+  margin-bottom: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.quote-item:active {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.quote-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-no {
+  font-size: 26rpx;
+  color: #374151;
+  font-weight: 500;
+}
+
+.quote-customer {
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-top: 4rpx;
+}
+
+.quote-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.quote-price {
+  font-size: 28rpx;
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.quote-date {
+  font-size: 20rpx;
+  color: #9ca3af;
+  margin-top: 4rpx;
+}
+
+.bottom-placeholder {
+  height: 40rpx;
+}
