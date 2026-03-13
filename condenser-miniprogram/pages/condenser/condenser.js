@@ -445,11 +445,11 @@ Page({
 
   getStatusText(status) {
     const map = {
-      DRAFT: '草稿',
-      PENDING_TECH: '待技术',
-      PENDING_PROCESS: '待工艺',
-      PENDING_LOGISTICS: '待物流',
-      PENDING_APPROVAL: '待审批',
+      DRAFT: '销售',
+      PENDING_TECH: '技术',
+      PENDING_PROCESS: '生产',
+      PENDING_LOGISTICS: '物流',
+      PENDING_APPROVAL: '审批',
       APPROVED: '已通过',
       REJECTED: '已驳回'
     }

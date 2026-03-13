@@ -75,7 +75,7 @@ public class ProcessCalcService extends ServiceImpl<QuoteItemProcessMapper, Quot
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_PROCESS.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待工艺核算状态的报价单可以添加工序");
+            throw new RuntimeException("只有生产状态的报价单可以添加工序");
         }
 
         // 从设备字典获取费率
@@ -239,7 +239,7 @@ public class ProcessCalcService extends ServiceImpl<QuoteItemProcessMapper, Quot
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_PROCESS.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待工艺核算状态的报价单可以提交");
+            throw new RuntimeException("只有生产状态的报价单可以提交");
         }
 
         // 计算总制造费用

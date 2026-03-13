@@ -31,19 +31,19 @@ public class QuoteStateMachineService {
     private static final Map<QuoteStatusEnum, Set<QuoteStatusEnum>> TRANSITIONS = new HashMap<>();
 
     static {
-        // 草稿 -> 待技术
+        // 销售 -> 技术
         TRANSITIONS.put(QuoteStatusEnum.DRAFT,
             Set.of(QuoteStatusEnum.PENDING_TECH));
-        // 待技术 -> 待工艺
+        // 技术 -> 生产
         TRANSITIONS.put(QuoteStatusEnum.PENDING_TECH,
             Set.of(QuoteStatusEnum.PENDING_PROCESS, QuoteStatusEnum.DRAFT));
-        // 待工艺 -> 待物流
+        // 生产 -> 物流
         TRANSITIONS.put(QuoteStatusEnum.PENDING_PROCESS,
             Set.of(QuoteStatusEnum.PENDING_LOGISTICS, QuoteStatusEnum.PENDING_TECH));
-        // 待物流 -> 待审批
+        // 物流 -> 审批
         TRANSITIONS.put(QuoteStatusEnum.PENDING_LOGISTICS,
             Set.of(QuoteStatusEnum.PENDING_APPROVAL, QuoteStatusEnum.PENDING_PROCESS));
-        // 待审批 -> 已批准/已驳回
+        // 审批 -> 已批准/已驳回
         TRANSITIONS.put(QuoteStatusEnum.PENDING_APPROVAL,
             Set.of(QuoteStatusEnum.APPROVED, QuoteStatusEnum.REJECTED));
         // 已驳回 -> 可回到任意前置状态

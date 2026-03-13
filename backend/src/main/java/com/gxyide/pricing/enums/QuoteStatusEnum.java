@@ -9,11 +9,11 @@ import lombok.Getter;
 @Getter
 public enum QuoteStatusEnum {
 
-    DRAFT("DRAFT", "草稿"),
-    PENDING_TECH("PENDING_TECH", "待技术定义"),
-    PENDING_PROCESS("PENDING_PROCESS", "待成本核算"),
-    PENDING_LOGISTICS("PENDING_LOGISTICS", "待物流测算"),
-    PENDING_APPROVAL("PENDING_APPROVAL", "待审批"),
+    DRAFT("DRAFT", "销售"),
+    PENDING_TECH("PENDING_TECH", "技术"),
+    PENDING_PROCESS("PENDING_PROCESS", "生产"),
+    PENDING_LOGISTICS("PENDING_LOGISTICS", "物流"),
+    PENDING_APPROVAL("PENDING_APPROVAL", "审批"),
     REJECTED("REJECTED", "已驳回"),
     APPROVED("APPROVED", "已批准"),
     ARCHIVED("ARCHIVED", "已归档");

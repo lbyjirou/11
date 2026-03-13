@@ -36,9 +36,9 @@ public class DeadlineCheckTask {
     );
 
     private static final Map<String, String> STAGE_LABEL_MAP = Map.of(
-        "PENDING_TECH", "技术定义",
-        "PENDING_PROCESS", "成本核算",
-        "PENDING_LOGISTICS", "物流测算",
+        "PENDING_TECH", "技术",
+        "PENDING_PROCESS", "生产",
+        "PENDING_LOGISTICS", "物流",
         "PENDING_APPROVAL", "审批"
     );
 

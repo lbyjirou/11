@@ -75,10 +75,10 @@ public class QuoteController {
 
     /**
      * 更新报价单
-     * SALES: 仅草稿状态可编辑
-     * TECH: 仅待技术状态可编辑
-     * PROCESS: 仅待工艺状态可编辑
-     * LOGISTICS: 仅待物流状态可编辑
+     * SALES: 仅销售状态可编辑
+     * TECH: 仅技术状态可编辑
+     * PROCESS: 仅生产状态可编辑
+     * LOGISTICS: 仅物流状态可编辑
      */
     @Operation(summary = "更新报价单")
     @PutMapping("/{id}")
@@ -90,21 +90,21 @@ public class QuoteController {
         }
         SysUser currentUser = getCurrentUser();
         String role = currentUser != null ? currentUser.getRole() : null;
-        // SALES只能编辑草稿状态
+        // SALES只能编辑销售状态
         if ("SALES".equals(role) && !"DRAFT".equals(order.getStatus())) {
-            return Result.error("只能编辑草稿状态的报价单");
+            return Result.error("只能编辑销售状态的报价单");
         }
-        // TECH只能在待技术状态编辑
+        // TECH只能在技术状态编辑
         if ("TECH".equals(role) && !"PENDING_TECH".equals(order.getStatus())) {
-            return Result.error("只能在待技术核算状态编辑");
+            return Result.error("只能在技术状态编辑");
         }
-        // PROCESS只能在待工艺核算状态编辑
+        // PROCESS只能在生产状态编辑
         if ("PROCESS".equals(role) && !"PENDING_PROCESS".equals(order.getStatus())) {
-            return Result.error("只能在待工艺核算状态编辑");
+            return Result.error("只能在生产状态编辑");
         }
-        // LOGISTICS只能在待物流状态编辑
+        // LOGISTICS只能在物流状态编辑
         if ("LOGISTICS".equals(role) && !"PENDING_LOGISTICS".equals(order.getStatus())) {
-            return Result.error("只能在待物流核算状态编辑");
+            return Result.error("只能在物流状态编辑");
         }
         quoteService.updateQuote(id, dto, role);
         return Result.success();
@@ -161,7 +161,7 @@ public class QuoteController {
     }
 
     /**
-     * 删除报价单（仅草稿状态）
+     * 删除报价单（仅销售状态）
      */
     @Operation(summary = "删除报价单")
     @DeleteMapping("/{id}")
@@ -172,7 +172,7 @@ public class QuoteController {
             return Result.error("报价单不存在");
         }
         if (!"DRAFT".equals(order.getStatus())) {
-            return Result.error("只能删除草稿状态的报价单");
+            return Result.error("只能删除销售状态的报价单");
         }
         quoteService.removeById(id);
         return Result.success();

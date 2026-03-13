@@ -4,9 +4,9 @@ Page({
   data: {
     mode: 'PERCENTAGE',
     stages: [
-      { key: 'DEADLINE_TECH', label: '技术定义', value: '30' },
-      { key: 'DEADLINE_PROCESS', label: '成本核算', value: '25' },
-      { key: 'DEADLINE_LOGISTICS', label: '物流测算', value: '20' },
+      { key: 'DEADLINE_TECH', label: '技术', value: '30' },
+      { key: 'DEADLINE_PROCESS', label: '生产', value: '25' },
+      { key: 'DEADLINE_LOGISTICS', label: '物流', value: '20' },
       { key: 'DEADLINE_APPROVE', label: '审批', value: '25' }
     ],
     escalationHours: '24',

@@ -31,7 +31,7 @@
     <scroll-view class="quote-list" scroll-y wx:else>
       <view class="quote-item {{item.overdue ? 'overdue' : ''}}" wx:for="{{quoteList}}" wx:key="id" bindtap="selectQuote" data-id="{{item.id}}">
         <view class="quote-item-header">
-          <text class="quote-no">{{item.quoteNo || '草稿'}}</text>
+          <text class="quote-no">{{item.quoteNo || '销售'}}</text>
           <view class="quote-status-group">
             <text class="overdue-tag" wx:if="{{item.overdue}}">超期</text>
             <text class="modification-tag" wx:if="{{item.isInModification}}">修改中</text>

@@ -244,7 +244,7 @@ public class ManagerService {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_APPROVAL.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待审批状态的报价单可以审批");
+            throw new RuntimeException("只有审批状态的报价单可以审批");
         }
 
         stateMachine.transition(orderId, QuoteStatusEnum.APPROVED, managerId);
@@ -264,7 +264,7 @@ public class ManagerService {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_APPROVAL.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待审批状态的报价单可以驳回");
+            throw new RuntimeException("只有审批状态的报价单可以驳回");
         }
 
         // 先标记为已驳回

@@ -45,7 +45,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_TECH.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待技术定义状态的报价单可以编辑BOM");
+            throw new RuntimeException("只有技术状态的报价单可以编辑BOM");
         }
 
         QuoteBom bom = new QuoteBom();
@@ -93,7 +93,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
         // 校验报价单状态
         QuoteOrder order = orderMapper.selectById(bom.getOrderId());
         if (order == null || !QuoteStatusEnum.PENDING_TECH.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待技术定义状态的报价单可以编辑BOM");
+            throw new RuntimeException("只有技术状态的报价单可以编辑BOM");
         }
 
         // 参数校验：毛重不能小于净重
@@ -150,7 +150,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
         // 校验报价单状态
         QuoteOrder order = orderMapper.selectById(bom.getOrderId());
         if (order == null || !QuoteStatusEnum.PENDING_TECH.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待技术定义状态的报价单可以编辑BOM");
+            throw new RuntimeException("只有技术状态的报价单可以编辑BOM");
         }
 
         Long parentId = bom.getParentId();
@@ -304,7 +304,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_TECH.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待技术定义状态的报价单可以导入BOM");
+            throw new RuntimeException("只有技术状态的报价单可以导入BOM");
         }
 
         bomMapper.deleteByOrderId(orderId);
@@ -402,7 +402,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_TECH.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待技术定义状态的报价单可以提交BOM");
+            throw new RuntimeException("只有技术状态的报价单可以提交BOM");
         }
 
         List<QuoteBom> bomList = bomMapper.selectByOrderId(orderId);

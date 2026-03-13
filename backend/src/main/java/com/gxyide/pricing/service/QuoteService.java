@@ -188,7 +188,7 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.DRAFT.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有草稿状态的报价单可以提交");
+            throw new RuntimeException("只有销售状态的报价单可以提交");
         }
         order.setStatus(QuoteStatusEnum.PENDING_TECH.getCode());
         order.setCurrentHandlerId(null);

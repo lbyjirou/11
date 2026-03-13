@@ -44,7 +44,7 @@ public class LogisticsCalcService extends ServiceImpl<QuoteLogisticsMapper, Quot
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_LOGISTICS.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待物流测算状态的报价单可以编辑物流信息");
+            throw new RuntimeException("只有物流状态的报价单可以编辑物流信息");
         }
 
         // 从字典获取包装信息
@@ -202,7 +202,7 @@ public class LogisticsCalcService extends ServiceImpl<QuoteLogisticsMapper, Quot
             throw new RuntimeException("报价单不存在");
         }
         if (!QuoteStatusEnum.PENDING_LOGISTICS.getCode().equals(order.getStatus())) {
-            throw new RuntimeException("只有待物流测算状态的报价单可以提交");
+            throw new RuntimeException("只有物流状态的报价单可以提交");
         }
 
         // 检查是否有物流数据
