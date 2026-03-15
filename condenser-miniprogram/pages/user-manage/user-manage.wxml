@@ -8,7 +8,7 @@
   </view>
 
   <!-- 添加按钮（独立放置，避免被胶囊遮挡） -->
-  <view class="action-bar">
+  <view class="action-bar" wx:if="{{isAdmin}}">
     <view class="add-btn" bindtap="showAddModal">
       <text>+ 添加用户</text>
     </view>
@@ -34,14 +34,20 @@
             <text class="user-account">@{{item.username}}</text>
             <text class="user-role {{item.role}}">{{roleMap[item.role] || item.role}}</text>
           </view>
+          <view class="user-assign" wx:if="{{item.role === 'SALES'}}">
+            <text>技术：{{userIdMap[item.techUserId] || '未分配'}}</text>
+            <text>生产：{{userIdMap[item.processUserId] || '未分配'}}</text>
+            <text>物流：{{userIdMap[item.logisticsUserId] || '未分配'}}</text>
+          </view>
         </view>
         <view class="user-status {{item.status === 1 ? 'active' : 'inactive'}}">
           {{item.status === 1 ? '启用' : '禁用'}}
         </view>
         <view class="user-actions">
-          <view class="action-btn edit" bindtap="editUser" data-user="{{item}}">编辑</view>
-          <view class="action-btn reset" bindtap="resetPassword" data-user="{{item}}">重置密码</view>
-          <view class="action-btn {{item.status === 1 ? 'disable' : 'enable'}}" bindtap="toggleStatus" data-user="{{item}}">
+          <view class="action-btn assign" bindtap="showAssignModal" data-user="{{item}}">归属分配</view>
+          <view class="action-btn edit" wx:if="{{isAdmin}}" bindtap="editUser" data-user="{{item}}">编辑</view>
+          <view class="action-btn reset" wx:if="{{isAdmin}}" bindtap="resetPassword" data-user="{{item}}">重置密码</view>
+          <view class="action-btn {{item.status === 1 ? 'disable' : 'enable'}}" wx:if="{{isAdmin}}" bindtap="toggleStatus" data-user="{{item}}">
             {{item.status === 1 ? '禁用' : '启用'}}
           </view>
         </view>
@@ -94,6 +100,48 @@
     <view class="modal-footer">
       <button class="btn-cancel" bindtap="hideModal">取消</button>
       <button class="btn-confirm" bindtap="saveUser">保存</button>
+    </view>
+  </view>
+
+  <!-- 归属分配弹窗 -->
+  <view class="modal-mask" wx:if="{{showAssignModal}}" bindtap="hideAssignModal"></view>
+  <view class="modal-content" wx:if="{{showAssignModal}}">
+    <view class="modal-header">
+      <text class="modal-title">归属分配（销售）</text>
+      <view class="modal-close" bindtap="hideAssignModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="form-item">
+        <text class="form-label">技术归属</text>
+        <picker class="form-picker" bindchange="onAssignChange" value="{{techIndex}}" range="{{techOptions}}" range-key="label" data-field="techUserId">
+          <view class="picker-content">
+            <text>{{techOptions[techIndex].label}}</text>
+            <view class="picker-arrow"></view>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">生产归属</text>
+        <picker class="form-picker" bindchange="onAssignChange" value="{{processIndex}}" range="{{processOptions}}" range-key="label" data-field="processUserId">
+          <view class="picker-content">
+            <text>{{processOptions[processIndex].label}}</text>
+            <view class="picker-arrow"></view>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="form-label">物流归属</text>
+        <picker class="form-picker" bindchange="onAssignChange" value="{{logisticsIndex}}" range="{{logisticsOptions}}" range-key="label" data-field="logisticsUserId">
+          <view class="picker-content">
+            <text>{{logisticsOptions[logisticsIndex].label}}</text>
+            <view class="picker-arrow"></view>
+          </view>
+        </picker>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="hideAssignModal">取消</button>
+      <button class="btn-confirm" bindtap="saveAssignments">保存</button>
     </view>
   </view>
 </view>

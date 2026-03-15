@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "工艺模版管理")
+@Tag(name = "工艺模板管理")
 @RestController
 @RequestMapping("/process-template")
 @RequiredArgsConstructor
@@ -19,45 +19,53 @@ public class ProcessTemplateController {
 
     private final ProcessTemplateService processTemplateService;
 
-    @Operation(summary = "获取当前用户的模版列表")
+    @Operation(summary = "获取模板列表")
     @GetMapping("/list")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
-    public Result<List<ProcessTemplate>> list() {
-        return Result.success(processTemplateService.listByCurrentUser());
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
+    public Result<List<ProcessTemplate>> list(
+            @RequestParam(defaultValue = "visible") String scope) {
+        if ("public".equalsIgnoreCase(scope)) {
+            return Result.success(processTemplateService.listPublic());
+        }
+        return Result.success(processTemplateService.listVisibleForCurrentUser());
     }
 
-    @Operation(summary = "创建模版")
+    @Operation(summary = "创建模板")
     @PostMapping
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> create(@RequestBody ProcessTemplate template) {
-        processTemplateService.createTemplate(template);
-        return Result.success();
+        try {
+            processTemplateService.createTemplate(template);
+            return Result.success();
+        } catch (IllegalStateException ex) {
+            return Result.error(ex.getMessage());
+        }
     }
 
-    @Operation(summary = "更新模版")
+    @Operation(summary = "更新模板")
     @PutMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> update(@PathVariable Long id,
                                @RequestBody ProcessTemplate template) {
-        if (!processTemplateService.updateOwnTemplate(id, template)) {
-            return Result.error("模版不存在或无权修改");
+        if (!processTemplateService.updateManagedTemplate(id, template)) {
+            return Result.error("模板不存在或无权修改");
         }
         return Result.success();
     }
 
-    @Operation(summary = "删除模版")
+    @Operation(summary = "删除模板")
     @DeleteMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> delete(@PathVariable Long id) {
-        if (!processTemplateService.deleteOwnTemplate(id)) {
-            return Result.error("模版不存在或无权删除");
+        if (!processTemplateService.deleteManagedTemplate(id)) {
+            return Result.error("模板不存在或无权删除");
         }
         return Result.success();
     }
 
-    @Operation(summary = "获取上次使用的工艺结构")
+    @Operation(summary = "获取最近使用的工艺结构")
     @GetMapping("/last-used")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<String> lastUsed() {
         return Result.success(processTemplateService.getLastUsedStructure());
     }

@@ -18,8 +18,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProcessTemplateService extends ServiceImpl<ProcessTemplateMapper, ProcessTemplate> {
 
+    private static final String PUBLIC_PRESET_PERMISSION = "SYSTEM_PROCESS_PRESET_CENTER";
+
     private final SysUserMapper sysUserMapper;
     private final QuoteOrderMapper quoteOrderMapper;
+    private final RbacService rbacService;
 
     private Long getCurrentUserId() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -29,37 +32,72 @@ public class ProcessTemplateService extends ServiceImpl<ProcessTemplateMapper, P
         return user.getId();
     }
 
-    public List<ProcessTemplate> listByCurrentUser() {
+    private boolean canManagePublicPresets(Long userId) {
+        return rbacService.hasPermission(userId, PUBLIC_PRESET_PERMISSION);
+    }
+
+    public List<ProcessTemplate> listVisibleForCurrentUser() {
         Long userId = getCurrentUserId();
         return list(new LambdaQueryWrapper<ProcessTemplate>()
-                .eq(ProcessTemplate::getUserId, userId)
+                .and(wrapper -> wrapper.eq(ProcessTemplate::getIsPublic, 1)
+                        .or()
+                        .eq(ProcessTemplate::getUserId, userId))
+                .orderByDesc(ProcessTemplate::getUpdateTime));
+    }
+
+    public List<ProcessTemplate> listPublic() {
+        return list(new LambdaQueryWrapper<ProcessTemplate>()
+                .eq(ProcessTemplate::getIsPublic, 1)
                 .orderByDesc(ProcessTemplate::getUpdateTime));
     }
 
     public void createTemplate(ProcessTemplate template) {
-        template.setUserId(getCurrentUserId());
+        Long userId = getCurrentUserId();
+        boolean createPublic = Integer.valueOf(1).equals(template.getIsPublic());
+        if (createPublic && !canManagePublicPresets(userId)) {
+            throw new IllegalStateException("无权创建公共模板");
+        }
+        template.setUserId(userId);
+        template.setIsPublic(createPublic ? 1 : 0);
         save(template);
     }
 
-    public boolean updateOwnTemplate(Long id, ProcessTemplate template) {
+    public boolean updateManagedTemplate(Long id, ProcessTemplate template) {
         Long userId = getCurrentUserId();
         ProcessTemplate existing = getById(id);
-        if (existing == null || !existing.getUserId().equals(userId)) return false;
-        template.setId(id);
-        template.setUserId(userId);
-        return updateById(template);
+        if (existing == null) {
+            return false;
+        }
+        if (Integer.valueOf(1).equals(existing.getIsPublic())) {
+            if (!canManagePublicPresets(userId)) {
+                return false;
+            }
+        } else if (!existing.getUserId().equals(userId)) {
+            return false;
+        }
+        existing.setName(template.getName());
+        if (template.getTemplateJson() != null) {
+            existing.setTemplateJson(template.getTemplateJson());
+        }
+        return updateById(existing);
     }
 
-    public boolean deleteOwnTemplate(Long id) {
+    public boolean deleteManagedTemplate(Long id) {
         Long userId = getCurrentUserId();
         ProcessTemplate existing = getById(id);
-        if (existing == null || !existing.getUserId().equals(userId)) return false;
+        if (existing == null) {
+            return false;
+        }
+        if (Integer.valueOf(1).equals(existing.getIsPublic())) {
+            if (!canManagePublicPresets(userId)) {
+                return false;
+            }
+        } else if (!existing.getUserId().equals(userId)) {
+            return false;
+        }
         return removeById(id);
     }
 
-    /**
-     * 查询当前用户最近一个有processDataJson的报价单，返回其结构JSON
-     */
     public String getLastUsedStructure() {
         Long userId = getCurrentUserId();
         QuoteOrder order = quoteOrderMapper.selectOne(

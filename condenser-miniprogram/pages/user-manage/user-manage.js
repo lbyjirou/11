@@ -7,7 +7,9 @@ Page({
     loading: false,
     refreshing: false,
     showModal: false,
+    showAssignModal: false,
     isEdit: false,
+    isAdmin: false,
     formData: {
       id: null,
       username: '',
@@ -16,9 +18,22 @@ Page({
       phone: '',
       role: ''
     },
+    assignUserId: null,
+    assignForm: {
+      techUserId: '',
+      processUserId: '',
+      logisticsUserId: ''
+    },
+    techOptions: [],
+    processOptions: [],
+    logisticsOptions: [],
+    techIndex: 0,
+    processIndex: 0,
+    logisticsIndex: 0,
     roleIndex: 0,
     roleOptions: [],
-    roleMap: {}
+    roleMap: {},
+    userIdMap: {}
   },
 
   onLoad() {
@@ -28,6 +43,7 @@ Page({
       setTimeout(() => wx.navigateBack(), 1500)
       return
     }
+    this.setData({ isAdmin: userInfo.role === 'ADMIN' })
     this.loadRoles()
     this.loadUsers()
   },
@@ -54,6 +70,7 @@ Page({
           const data = res.data.data
           const users = data.records || data || []
           this.setData({ users })
+          this.buildAssignmentOptions(users)
         } else {
           wx.showToast({ title: res.data.message || '加载失败', icon: 'none' })
         }
@@ -65,6 +82,22 @@ Page({
         this.setData({ loading: false, refreshing: false })
       }
     })
+  },
+
+  buildAssignmentOptions(users) {
+    const toOption = u => ({ value: String(u.id), label: u.realName || u.username })
+    const userIdMap = {}
+    users.forEach(u => { userIdMap[String(u.id)] = u.realName || u.username })
+    const techOptions = [{ value: '', label: '未分配' }].concat(
+      users.filter(u => u.role === 'TECH').map(toOption)
+    )
+    const processOptions = [{ value: '', label: '未分配' }].concat(
+      users.filter(u => u.role === 'PROCESS').map(toOption)
+    )
+    const logisticsOptions = [{ value: '', label: '未分配' }].concat(
+      users.filter(u => u.role === 'LOGISTICS').map(toOption)
+    )
+    this.setData({ techOptions, processOptions, logisticsOptions, userIdMap })
   },
 
   onRefresh() {
@@ -102,6 +135,77 @@ Page({
 
   hideModal() {
     this.setData({ showModal: false })
+  },
+
+  showAssignModal(e) {
+    const user = e.currentTarget.dataset.user
+    if (user.role !== 'SALES') {
+      wx.showToast({ title: '仅销售可分配归属', icon: 'none' })
+      return
+    }
+    const techUserId = user.techUserId ? String(user.techUserId) : ''
+    const processUserId = user.processUserId ? String(user.processUserId) : ''
+    const logisticsUserId = user.logisticsUserId ? String(user.logisticsUserId) : ''
+    const techIndex = this.data.techOptions.findIndex(o => o.value === techUserId)
+    const processIndex = this.data.processOptions.findIndex(o => o.value === processUserId)
+    const logisticsIndex = this.data.logisticsOptions.findIndex(o => o.value === logisticsUserId)
+    this.setData({
+      showAssignModal: true,
+      assignUserId: user.id,
+      assignForm: { techUserId, processUserId, logisticsUserId },
+      techIndex: techIndex >= 0 ? techIndex : 0,
+      processIndex: processIndex >= 0 ? processIndex : 0,
+      logisticsIndex: logisticsIndex >= 0 ? logisticsIndex : 0
+    })
+  },
+
+  hideAssignModal() {
+    this.setData({ showAssignModal: false })
+  },
+
+  onAssignChange(e) {
+    const field = e.currentTarget.dataset.field
+    const index = parseInt(e.detail.value)
+    const optionsMap = {
+      techUserId: this.data.techOptions,
+      processUserId: this.data.processOptions,
+      logisticsUserId: this.data.logisticsOptions
+    }
+    const value = optionsMap[field][index].value
+    this.setData({
+      [`assignForm.${field}`]: value,
+      [`${field.replace('UserId', '')}Index`]: index
+    })
+  },
+
+  saveAssignments() {
+    const { assignUserId, assignForm } = this.data
+    const token = auth.getToken()
+    wx.showLoading({ title: '保存中...' })
+    wx.request({
+      url: 'http://localhost:8080/api/admin/user/' + assignUserId + '/assignments',
+      method: 'POST',
+      header: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      data: {
+        techUserId: assignForm.techUserId || null,
+        processUserId: assignForm.processUserId || null,
+        logisticsUserId: assignForm.logisticsUserId || null
+      },
+      success: res => {
+        wx.hideLoading()
+        if (res.data.code === 200) {
+          wx.showToast({ title: '保存成功', icon: 'success' })
+          this.hideAssignModal()
+          this.loadUsers()
+        } else {
+          wx.showToast({ title: res.data.message || '保存失败', icon: 'none' })
+        }
+      },
+      fail: () => {
+        wx.hideLoading()
+        wx.showToast({ title: '网络错误', icon: 'none' })
+      }
+    })
   },
 
   onFormInput(e) {

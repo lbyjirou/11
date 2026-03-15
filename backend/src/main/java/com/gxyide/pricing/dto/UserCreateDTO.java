@@ -9,4 +9,11 @@ public class UserCreateDTO {
     private String realName;
     private String phone;
     private String role;
+    private Long techUserId;
+    private Long processUserId;
+    private Long logisticsUserId;
+    private Long techProcessUserId;
+    private Long techLogisticsUserId;
+    private Long processLogisticsUserId;
+    private Long logisticsApproveUserId;
 }

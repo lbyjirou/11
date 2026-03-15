@@ -207,6 +207,11 @@ page {
   text-align: center;
 }
 
+.action-btn.assign {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
 .action-btn.edit {
   background: rgba(59, 130, 246, 0.1);
   color: #2563eb;
@@ -225,6 +230,15 @@ page {
 .action-btn.enable {
   background: rgba(34, 197, 94, 0.1);
   color: #16a34a;
+}
+
+.user-assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #6b7280;
 }
 
 /* 加载 */

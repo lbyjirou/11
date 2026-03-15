@@ -63,6 +63,7 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
         order.setCreatorId(creatorId);
         order.setStatus(QuoteStatusEnum.DRAFT.getCode());
         order.setCurrentHandlerId(creatorId);
+        applyAssignmentsFromCreator(order);
 
         // 销售新字段默认值
         if (order.getQuoteVersion() == null) {
@@ -102,6 +103,14 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
         // 根据角色过滤数据范围
         if ("SALES".equals(role)) {
             wrapper.eq(QuoteOrder::getCreatorId, userId);
+        } else if ("TECH".equals(role)) {
+            wrapper.eq(QuoteOrder::getTechHandlerId, userId);
+        } else if ("PROCESS".equals(role)) {
+            wrapper.eq(QuoteOrder::getProcessHandlerId, userId);
+        } else if ("LOGISTICS".equals(role)) {
+            wrapper.eq(QuoteOrder::getLogisticsHandlerId, userId);
+        } else if ("MANAGER".equals(role)) {
+            wrapper.eq(QuoteOrder::getCurrentHandlerId, userId);
         }
 
         wrapper.orderByDesc(QuoteOrder::getCreateTime);
@@ -190,8 +199,12 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
         if (!QuoteStatusEnum.DRAFT.getCode().equals(order.getStatus())) {
             throw new RuntimeException("只有销售状态的报价单可以提交");
         }
+        applyAssignmentsFromCreator(order);
+        if (order.getTechHandlerId() == null) {
+            throw new RuntimeException("请先配置归属技术员");
+        }
         order.setStatus(QuoteStatusEnum.PENDING_TECH.getCode());
-        order.setCurrentHandlerId(null);
+        order.setCurrentHandlerId(order.getTechHandlerId());
 
         // 首次提交时计算各环节截止时间
         deadlineService.calculateDeadlines(order);
@@ -222,21 +235,35 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
                 if (!QuoteStatusEnum.PENDING_TECH.getCode().equals(currentStatus)) {
                     throw new RuntimeException("当前状态不允许技术提交");
                 }
+                applyAssignmentsFromTech(order);
+                if (order.getProcessHandlerId() == null) {
+                    throw new RuntimeException("请先配置归属生产员");
+                }
                 deadlineService.pauseStageTimer(order, "TECH");
                 deadlineService.startStageTimer(order, "PROCESS");
                 nextStatus = QuoteStatusEnum.PENDING_PROCESS.getCode();
+                order.setCurrentHandlerId(order.getProcessHandlerId());
                 break;
             case "PROCESS":
                 if (!QuoteStatusEnum.PENDING_PROCESS.getCode().equals(currentStatus)) {
                     throw new RuntimeException("当前状态不允许工艺提交");
                 }
+                applyAssignmentsFromProcess(order);
+                if (order.getLogisticsHandlerId() == null) {
+                    throw new RuntimeException("请先配置归属物流员");
+                }
                 deadlineService.pauseStageTimer(order, "PROCESS");
                 deadlineService.startStageTimer(order, "LOGISTICS");
                 nextStatus = QuoteStatusEnum.PENDING_LOGISTICS.getCode();
+                order.setCurrentHandlerId(order.getLogisticsHandlerId());
                 break;
             case "LOGISTICS":
                 if (!QuoteStatusEnum.PENDING_LOGISTICS.getCode().equals(currentStatus)) {
                     throw new RuntimeException("当前状态不允许物流提交");
+                }
+                applyAssignmentsFromLogistics(order);
+                if (order.getCurrentHandlerId() == null) {
+                    throw new RuntimeException("请先配置归属报价经理");
                 }
                 deadlineService.pauseStageTimer(order, "LOGISTICS");
                 deadlineService.startStageTimer(order, "APPROVAL");
@@ -248,13 +275,13 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
                     throw new RuntimeException("当前状态无法继续推进");
                 }
                 deadlineService.pauseAllTimers(order);
+                order.setCurrentHandlerId(null);
                 break;
             default:
                 throw new RuntimeException("当前角色无权推进状态");
         }
 
         order.setStatus(nextStatus);
-        order.setCurrentHandlerId(null);
         updateById(order);
 
         // 保存阶段快照
@@ -504,16 +531,20 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
                     userId, hiddenIds));
                 break;
             case "TECH":
-                result.put("pending", countByStatus(QuoteStatusEnum.PENDING_TECH.getCode(), hiddenIds));
+                result.put("pending", countByStatusAndTechHandler(
+                    QuoteStatusEnum.PENDING_TECH.getCode(), userId, hiddenIds));
                 break;
             case "PROCESS":
-                result.put("pending", countByStatus(QuoteStatusEnum.PENDING_PROCESS.getCode(), hiddenIds));
+                result.put("pending", countByStatusAndProcessHandler(
+                    QuoteStatusEnum.PENDING_PROCESS.getCode(), userId, hiddenIds));
                 break;
             case "LOGISTICS":
-                result.put("pending", countByStatus(QuoteStatusEnum.PENDING_LOGISTICS.getCode(), hiddenIds));
+                result.put("pending", countByStatusAndLogisticsHandler(
+                    QuoteStatusEnum.PENDING_LOGISTICS.getCode(), userId, hiddenIds));
                 break;
             case "MANAGER":
-                result.put("pending", countByStatus(QuoteStatusEnum.PENDING_APPROVAL.getCode(), hiddenIds));
+                result.put("pending", countByStatusAndCurrentHandler(
+                    QuoteStatusEnum.PENDING_APPROVAL.getCode(), userId, hiddenIds));
                 break;
             case "ADMIN":
                 result.put("pending", 0);
@@ -543,7 +574,47 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
         return Math.toIntExact(count(wrapper));
     }
 
+    private Integer countByStatusAndTechHandler(String status, Long handlerId, List<Long> hiddenIds) {
+        LambdaQueryWrapper<QuoteOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuoteOrder::getStatus, status)
+               .eq(QuoteOrder::getTechHandlerId, handlerId);
+        if (!hiddenIds.isEmpty()) {
+            wrapper.notIn(QuoteOrder::getId, hiddenIds);
+        }
+        return Math.toIntExact(count(wrapper));
+    }
+
+    private Integer countByStatusAndProcessHandler(String status, Long handlerId, List<Long> hiddenIds) {
+        LambdaQueryWrapper<QuoteOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuoteOrder::getStatus, status)
+               .eq(QuoteOrder::getProcessHandlerId, handlerId);
+        if (!hiddenIds.isEmpty()) {
+            wrapper.notIn(QuoteOrder::getId, hiddenIds);
+        }
+        return Math.toIntExact(count(wrapper));
+    }
+
+    private Integer countByStatusAndLogisticsHandler(String status, Long handlerId, List<Long> hiddenIds) {
+        LambdaQueryWrapper<QuoteOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuoteOrder::getStatus, status)
+               .eq(QuoteOrder::getLogisticsHandlerId, handlerId);
+        if (!hiddenIds.isEmpty()) {
+            wrapper.notIn(QuoteOrder::getId, hiddenIds);
+        }
+        return Math.toIntExact(count(wrapper));
+    }
+
     // ==================== 角色字段映射 ====================
+
+    private Integer countByStatusAndCurrentHandler(String status, Long handlerId, List<Long> hiddenIds) {
+        LambdaQueryWrapper<QuoteOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuoteOrder::getStatus, status)
+               .eq(QuoteOrder::getCurrentHandlerId, handlerId);
+        if (!hiddenIds.isEmpty()) {
+            wrapper.notIn(QuoteOrder::getId, hiddenIds);
+        }
+        return Math.toIntExact(count(wrapper));
+    }
 
     private void applySalesFields(QuoteOrder o, QuoteCreateDTO d) {
         o.setRfqId(d.getRfqId());
@@ -601,5 +672,69 @@ public class QuoteService extends ServiceImpl<QuoteOrderMapper, QuoteOrder> {
 
     private void applyApproveFields(QuoteOrder o, QuoteCreateDTO d) {
         o.setApproveDataJson(d.getApproveDataJson());
+    }
+
+    private void applyAssignmentsFromCreator(QuoteOrder order) {
+        if (order.getCreatorId() == null) {
+            return;
+        }
+        SysUser creator = sysUserMapper.selectById(order.getCreatorId());
+        if (creator == null) {
+            return;
+        }
+        if (order.getTechHandlerId() == null) {
+            order.setTechHandlerId(creator.getTechUserId());
+        }
+        if (order.getProcessHandlerId() == null) {
+            order.setProcessHandlerId(creator.getProcessUserId());
+        }
+        if (order.getLogisticsHandlerId() == null) {
+            order.setLogisticsHandlerId(creator.getLogisticsUserId());
+        }
+    }
+
+    private void applyAssignmentsFromTech(QuoteOrder order) {
+        Long techId = order.getCurrentHandlerId() != null ? order.getCurrentHandlerId() : order.getTechHandlerId();
+        if (techId == null) {
+            return;
+        }
+        SysUser tech = sysUserMapper.selectById(techId);
+        if (tech == null) {
+            return;
+        }
+        if (tech.getTechProcessUserId() != null) {
+            order.setProcessHandlerId(tech.getTechProcessUserId());
+        }
+        if (tech.getTechLogisticsUserId() != null) {
+            order.setLogisticsHandlerId(tech.getTechLogisticsUserId());
+        }
+    }
+
+    private void applyAssignmentsFromProcess(QuoteOrder order) {
+        Long processId = order.getCurrentHandlerId() != null ? order.getCurrentHandlerId() : order.getProcessHandlerId();
+        if (processId == null) {
+            return;
+        }
+        SysUser process = sysUserMapper.selectById(processId);
+        if (process == null) {
+            return;
+        }
+        if (process.getProcessLogisticsUserId() != null) {
+            order.setLogisticsHandlerId(process.getProcessLogisticsUserId());
+        }
+    }
+
+    private void applyAssignmentsFromLogistics(QuoteOrder order) {
+        Long logisticsId = order.getCurrentHandlerId() != null ? order.getCurrentHandlerId() : order.getLogisticsHandlerId();
+        if (logisticsId == null) {
+            return;
+        }
+        SysUser logistics = sysUserMapper.selectById(logisticsId);
+        if (logistics == null) {
+            return;
+        }
+        if (logistics.getLogisticsApproveUserId() != null) {
+            order.setCurrentHandlerId(logistics.getLogisticsApproveUserId());
+        }
     }
 }

@@ -35,6 +35,7 @@ public class ProcessCalcService extends ServiceImpl<QuoteItemProcessMapper, Quot
     private final QuoteOrderMapper orderMapper;
     private final QuoteBomMapper bomMapper;
     private final QuoteModificationService modificationService;
+    private final SysUserMapper sysUserMapper;
 
     /**
      * 添加工序（从DTO，支持processDictId自动填充工序名称）
@@ -246,8 +247,23 @@ public class ProcessCalcService extends ServiceImpl<QuoteItemProcessMapper, Quot
         calculateTotalManufacturingCost(orderId);
 
         // 状态流转到物流专员
+        if (order.getCurrentHandlerId() != null) {
+            SysUser process = sysUserMapper.selectById(order.getCurrentHandlerId());
+            if (process != null && process.getProcessLogisticsUserId() != null) {
+                order.setLogisticsHandlerId(process.getProcessLogisticsUserId());
+            }
+        }
+        if (order.getLogisticsHandlerId() == null) {
+            SysUser creator = order.getCreatorId() != null ? sysUserMapper.selectById(order.getCreatorId()) : null;
+            if (creator != null) {
+                order.setLogisticsHandlerId(creator.getLogisticsUserId());
+            }
+        }
         order.setStatus(QuoteStatusEnum.PENDING_LOGISTICS.getCode());
-        order.setCurrentHandlerId(null);
+        if (order.getLogisticsHandlerId() == null) {
+            throw new RuntimeException("请先配置归属物流员");
+        }
+        order.setCurrentHandlerId(order.getLogisticsHandlerId());
         orderMapper.updateById(order);
 
         modificationService.saveSnapshot(orderId, "PROCESS", null, null);

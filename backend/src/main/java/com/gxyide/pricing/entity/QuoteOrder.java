@@ -31,6 +31,15 @@ public class QuoteOrder {
     /** 当前处理人ID */
     private Long currentHandlerId;
 
+    /** 指派技术员ID */
+    private Long techHandlerId;
+
+    /** 指派生产员ID */
+    private Long processHandlerId;
+
+    /** 指派物流员ID */
+    private Long logisticsHandlerId;
+
     /** 驳回原因 */
     private String rejectReason;
 

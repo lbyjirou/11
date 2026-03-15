@@ -684,8 +684,8 @@
               <view class="cp-dropdown-menu" wx:if="{{showProdAddMenu}}">
                 <view class="cp-dropdown-item" catchtap="openCustomProcessModal" data-skey="">添加工序</view>
                 <view class="cp-dropdown-item" catchtap="openAddSectionModal">添加工序区域</view>
-                <view class="cp-dropdown-item" catchtap="openAddSectionModal" data-dtype="energy" data-subtype="device">添加设备消耗</view>
-                <view class="cp-dropdown-item" catchtap="openAddSectionModal" data-dtype="energy" data-subtype="material">添加辅料消耗</view>
+                <view class="cp-dropdown-item" catchtap="quickAddDeviceEnergy">添加设备消耗</view>
+                <view class="cp-dropdown-item" catchtap="quickAddMaterialEnergy">添加辅料消耗</view>
                 <view class="cp-dropdown-item" catchtap="openAddSectionModal" data-dtype="moldFee">添加模具费区域</view>
               </view>
             </view>
@@ -1224,7 +1224,7 @@
                 <scroll-view scroll-y class="preset-dropdown-scroll">
                   <view class="preset-option {{batchSelectedPresets && batchSelectedPresets.length > 0 && batchSelectedPresets.some ? '' : ''}}" wx:for="{{filteredPresets}}" wx:key="id" catchtap="selectPresetForProcess" data-id="{{item.id}}">
                     <text class="preset-option-name">{{item.name}}</text>
-                    <text class="preset-option-section">{{item.sectionLabel}}</text>
+                    <text class="preset-option-section">{{item.isPublic === 1 ? '公共' : '个人'}} · {{item.sectionLabel}}</text>
                   </view>
                 </scroll-view>
               </view>
@@ -1280,10 +1280,10 @@
                 <input class="form-input" type="text" always-embed bindinput="onEnergyCardNameInput" bindblur="hideEnergyPresetDropdown" placeholder="输入名称搜索预设，或直接填写" />
                 <view class="preset-dropdown" wx:if="{{showEnergyPresetDropdown && filteredEnergyPresets.length}}">
                   <scroll-view scroll-y class="preset-dropdown-scroll">
-                    <view class="preset-option" wx:for="{{filteredEnergyPresets}}" wx:key="id" wx:for-item="ep" catchtap="selectEnergyCardPreset" data-id="{{ep.id}}">
-                      <text class="preset-option-name">{{ep.name}}</text>
-                      <text class="preset-option-section">{{ep.params.length}}个变量</text>
-                    </view>
+                  <view class="preset-option" wx:for="{{filteredEnergyPresets}}" wx:key="id" wx:for-item="ep" catchtap="selectEnergyCardPreset" data-id="{{ep.id}}">
+                    <text class="preset-option-name">{{ep.name}}</text>
+                    <text class="preset-option-section">{{ep.isPublic === 1 ? '公共' : '个人'}} · {{ep.params.length}}个变量</text>
+                  </view>
                   </scroll-view>
                 </view>
               </view>
@@ -1373,13 +1373,16 @@
               <view class="form-label" style="margin-bottom:12rpx;">已有预设</view>
               <view class="tpl-list">
                 <view class="tpl-item" wx:for="{{processPresets}}" wx:key="id">
-                  <view style="flex:1;">
+                  <view class="tpl-main">
                     <text class="tpl-name">{{item.name}}</text>
-                    <text class="preset-option-section" style="margin-left:12rpx;">{{item.sectionLabel}}</text>
+                    <view class="tpl-meta-row">
+                      <text wx:if="{{canSavePublicPreset && item.isPublic !== 1}}" class="preset-option-section preset-public-action" catchtap="saveProcessPresetAsPublic" data-id="{{item.id}}">存为公共</text>
+                      <text class="preset-option-section">{{item.isPublic === 1 ? '公共' : '个人'}} · {{item.sectionLabel}}</text>
+                    </view>
                   </view>
                   <view class="tpl-action-btn" catchtap="copyPreset" data-id="{{item.id}}">复制</view>
-                  <view class="tpl-action-btn" catchtap="editPreset" data-id="{{item.id}}">编辑</view>
-                  <view class="tpl-action-btn danger" catchtap="deletePreset" data-id="{{item.id}}">删除</view>
+                  <view class="tpl-action-btn" wx:if="{{item.isPublic !== 1}}" catchtap="editPreset" data-id="{{item.id}}">编辑</view>
+                  <view class="tpl-action-btn danger" wx:if="{{item.isPublic !== 1}}" catchtap="deletePreset" data-id="{{item.id}}">删除</view>
                 </view>
               </view>
             </view>
@@ -1455,12 +1458,15 @@
               <view class="form-label" style="margin-bottom:12rpx;">已有预设</view>
               <view class="tpl-list">
                 <view class="tpl-item" wx:for="{{energyMaterialPresets}}" wx:key="id">
-                  <view style="flex:1;">
+                  <view class="tpl-main">
                     <text class="tpl-name">{{item.name}}</text>
-                    <text class="preset-option-section" style="margin-left:12rpx;">{{item.params.length}}个变量</text>
+                    <view class="tpl-meta-row">
+                      <text wx:if="{{canSavePublicPreset && item.isPublic !== 1}}" class="preset-option-section preset-public-action" catchtap="saveMaterialPresetAsPublic" data-id="{{item.id}}">存为公共</text>
+                      <text class="preset-option-section">{{item.isPublic === 1 ? '公共' : '个人'}} · {{item.params.length}}个变量</text>
+                    </view>
                   </view>
-                  <view class="tpl-action-btn" catchtap="editMaterialPreset" data-id="{{item.id}}">编辑</view>
-                  <view class="tpl-action-btn danger" catchtap="deleteMaterialPreset" data-id="{{item.id}}">删除</view>
+                  <view class="tpl-action-btn" wx:if="{{item.isPublic !== 1}}" catchtap="editMaterialPreset" data-id="{{item.id}}">编辑</view>
+                  <view class="tpl-action-btn danger" wx:if="{{item.isPublic !== 1}}" catchtap="deleteMaterialPreset" data-id="{{item.id}}">删除</view>
                 </view>
               </view>
             </view>
@@ -1524,6 +1530,7 @@
                 <scroll-view scroll-y class="preset-dropdown-scroll">
                   <view class="preset-option" wx:for="{{deviceTemplateResults}}" wx:key="id" catchtap="selectDeviceTemplate" data-id="{{item.id}}">
                     <text class="preset-option-name">{{item.name}}</text>
+                    <text class="preset-option-section">{{item.isPublic === 1 ? '公共模板' : '个人模板'}}</text>
                   </view>
                 </scroll-view>
               </view>
@@ -1579,11 +1586,15 @@
               <view class="form-label" style="margin-bottom:12rpx;">已有预设</view>
               <view class="tpl-list">
                 <view class="tpl-item" wx:for="{{devicePresets}}" wx:key="id">
-                  <view style="flex:1;">
+                  <view class="tpl-main">
                     <text class="tpl-name">{{item.name}}</text>
+                    <view class="tpl-meta-row">
+                      <text wx:if="{{canSavePublicPreset && item.isPublic !== 1}}" class="preset-option-section preset-public-action" catchtap="saveDevicePresetAsPublic" data-id="{{item.id}}">存为公共</text>
+                      <text class="preset-option-section">{{item.isPublic === 1 ? '公共' : '个人'}}</text>
+                    </view>
                   </view>
-                  <view class="tpl-action-btn" catchtap="editDevicePreset" data-id="{{item.id}}">编辑</view>
-                  <view class="tpl-action-btn danger" catchtap="deleteDevicePreset" data-id="{{item.id}}">删除</view>
+                  <view class="tpl-action-btn" wx:if="{{item.isPublic !== 1}}" catchtap="editDevicePreset" data-id="{{item.id}}">编辑</view>
+                  <view class="tpl-action-btn danger" wx:if="{{item.isPublic !== 1}}" catchtap="deleteDevicePreset" data-id="{{item.id}}">删除</view>
                 </view>
               </view>
             </view>
@@ -1593,6 +1604,10 @@
             <view class="form-item">
               <text class="form-label">预设名称</text>
               <input class="form-input" value="{{devicePresetForm.name}}" bindinput="onDevicePresetFormInput" data-field="name" placeholder="{{templateCategory === 'mold' ? '如：冲压模、注塑模' : '如：CNC加工中心、注塑机'}}" />
+            </view>
+            <view class="form-item" wx:if="{{templateCategory === 'device'}}">
+              <text class="form-label">设备能耗变量名</text>
+              <input class="form-input" value="{{devicePresetForm.sectionKey}}" bindinput="onDevicePresetFormInput" data-field="sectionKey" placeholder="如：qianhan，用于公式绑定" />
             </view>
 
             <!-- 顶层变量 -->
@@ -1699,12 +1714,18 @@
             </view>
             <view class="tpl-list" wx:if="{{processTemplates.length}}">
               <view class="tpl-item" wx:for="{{processTemplates}}" wx:key="id">
-                <text class="tpl-name">{{item.name}}</text>
+                <view class="tpl-main">
+                  <text class="tpl-name">{{item.name}}</text>
+                  <view class="tpl-meta-row">
+                    <text class="preset-option-section">{{item.isPublic === 1 ? '公共模板' : '个人模板'}}</text>
+                  </view>
+                </view>
                 <view class="tpl-actions">
+                  <view class="tpl-action-btn" wx:if="{{canSavePublicPreset && item.isPublic !== 1}}" catchtap="saveTemplateAsPublic" data-id="{{item.id}}">存为公共</view>
                   <view class="tpl-action-btn preview" catchtap="openTemplatePreview" data-id="{{item.id}}">预览</view>
-                  <view class="tpl-action-btn primary" catchtap="updateTemplateContent" data-id="{{item.id}}" data-name="{{item.name}}">更新</view>
-                  <view class="tpl-action-btn" catchtap="renameTemplate" data-id="{{item.id}}" data-name="{{item.name}}">重命名</view>
-                  <view class="tpl-action-btn danger" catchtap="deleteTemplate" data-id="{{item.id}}" data-name="{{item.name}}">删除</view>
+                  <view class="tpl-action-btn primary" wx:if="{{item.isPublic !== 1}}" catchtap="updateTemplateContent" data-id="{{item.id}}" data-name="{{item.name}}" data-is-public="{{item.isPublic}}">更新</view>
+                  <view class="tpl-action-btn" wx:if="{{item.isPublic !== 1}}" catchtap="renameTemplate" data-id="{{item.id}}" data-name="{{item.name}}" data-is-public="{{item.isPublic}}">重命名</view>
+                  <view class="tpl-action-btn danger" wx:if="{{item.isPublic !== 1}}" catchtap="deleteTemplate" data-id="{{item.id}}" data-name="{{item.name}}" data-is-public="{{item.isPublic}}">删除</view>
                 </view>
               </view>
             </view>
@@ -1829,7 +1850,12 @@
           <view class="modal-body">
             <view class="tpl-list" wx:if="{{processTemplates.length}}">
               <view class="tpl-item" wx:for="{{processTemplates}}" wx:key="id">
-                <text class="tpl-name">{{item.name}}</text>
+                <view class="tpl-main">
+                  <text class="tpl-name">{{item.name}}</text>
+                  <view class="tpl-meta-row">
+                    <text class="preset-option-section">{{item.isPublic === 1 ? '公共模板' : '个人模板'}}</text>
+                  </view>
+                </view>
                 <view class="tpl-actions">
                   <view class="tpl-action-btn primary" catchtap="applyTemplate" data-id="{{item.id}}">运用</view>
                 </view>

@@ -8,6 +8,7 @@
     "pages/history/history",
     "pages/profile/profile",
     "pages/user-manage/user-manage",
+    "pages/assignment-manage/assignment-manage",
     "pages/config/config",
     "pages/process-manage/process-manage",
     "pages/spec-manage/spec-manage",

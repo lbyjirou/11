@@ -19,41 +19,55 @@ public class ProcessController {
 
     private final ProcessService processService;
 
-    @Operation(summary = "获取启用的工序列表（汇总页使用）")
+    @Operation(summary = "获取启用的公共工序列表")
     @GetMapping("/list")
     public Result<List<ProcessDict>> list() {
         return Result.success(processService.listActive());
     }
 
-    @Operation(summary = "获取所有工序列表（工序管理页使用）")
+    @Operation(summary = "获取公共工序预设列表")
     @GetMapping("/all")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<List<ProcessDict>> listAll() {
-        return Result.success(processService.listAll());
+        return Result.success(processService.listAllPublic());
     }
 
-    @Operation(summary = "新增工序")
+    @Operation(summary = "获取当前用户可见的工序预设（个人+公共）")
+    @GetMapping("/preset-list")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    public Result<List<ProcessDict>> presetList() {
+        return Result.success(processService.listVisibleForCurrentUser());
+    }
+
+    @Operation(summary = "新增工序预设")
     @PostMapping
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> add(@RequestBody ProcessDict process) {
-        processService.save(process);
-        return Result.success();
+        try {
+            processService.createManaged(process);
+            return Result.success();
+        } catch (IllegalStateException ex) {
+            return Result.error(ex.getMessage());
+        }
     }
 
-    @Operation(summary = "更新工序")
+    @Operation(summary = "更新工序预设")
     @PutMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> update(@PathVariable Long id, @RequestBody ProcessDict process) {
-        process.setId(id);
-        processService.updateById(process);
+        if (!processService.updateManaged(id, process)) {
+            return Result.error("工序预设不存在或无权修改");
+        }
         return Result.success();
     }
 
-    @Operation(summary = "删除工序")
+    @Operation(summary = "删除工序预设")
     @DeleteMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> delete(@PathVariable Long id) {
-        processService.removeById(id);
+        if (!processService.deleteManaged(id)) {
+            return Result.error("工序预设不存在或无权删除");
+        }
         return Result.success();
     }
 }

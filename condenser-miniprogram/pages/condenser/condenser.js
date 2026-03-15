@@ -67,6 +67,7 @@ Page({
     // 用户角色与权限
     userRole: '',
     visibleTabs: [],
+    canSavePublicPreset: false,
     // Tab控制
     mainTab: 'setting',
     calcSubTab: 'collector',
@@ -221,7 +222,7 @@ Page({
     showDevicePresetManager: false,
     devicePresets: [],
     editingDevicePresetId: null,
-    devicePresetForm: { name: '', variables: [], subGroups: [] },
+    devicePresetForm: { name: '', sectionKey: '', variables: [], subGroups: [] },
     templateCategory: 'device',
     // 行级公式
     customProcessFormFormulas: {},
@@ -423,7 +424,11 @@ Page({
     }
 
     const defaultTab = visibleTabs.length > 0 ? visibleTabs[0].key : 'setting'
-    const nextData = { userRole: role, visibleTabs }
+    const nextData = {
+      userRole: role,
+      visibleTabs,
+      canSavePublicPreset: !!(perms && perms.indexOf('SYSTEM_PROCESS_PRESET_CENTER') !== -1)
+    }
     if (setMainTab) nextData.mainTab = defaultTab
     this.setData(nextData)
   },
@@ -4997,6 +5002,74 @@ Page({
       this.setData({ processTemplates: list || [] })
     }).catch(() => {})
   },
+  saveTemplateAsPublic(e) {
+    if (!this.data.canSavePublicPreset) {
+      wx.showToast({ title: '您没有公共预设权限', icon: 'none' })
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const tpl = (this.data.processTemplates || []).find(item => String(item.id) === String(id))
+    if (!tpl || Number(tpl.isPublic) === 1) return
+    let templateData = {}
+    try { templateData = JSON.parse(tpl.templateJson || '{}') } catch (err) {}
+    templateData._publicSource = { type: 'personal_preset', text: '来源：个人预设' }
+    const duplicate = (this.data.processTemplates || []).find(item =>
+      Number(item.isPublic) === 1 &&
+      String(item.id) !== String(id) &&
+      (item.name || '').trim() === (tpl.name || '').trim()
+    )
+    if (duplicate) {
+      const sameContent = this._stablePresetStringify(this._normalizePublicTemplateData(duplicate.templateJson))
+        === this._stablePresetStringify(this._normalizePublicTemplateData(JSON.stringify(templateData)))
+      if (sameContent) {
+        wx.showToast({ title: '公共模板已存在同名项', icon: 'none' })
+        return
+      }
+      const that = this
+      wx.showModal({
+        title: '更新公共模板',
+        content: '已存在同名公共模板，是否更新为当前内容？',
+        success(res) {
+          if (!res.confirm) return
+          wx.showLoading({ title: '更新中...' })
+          api.updateProcessTemplate(duplicate.id, {
+            name: tpl.name,
+            templateJson: JSON.stringify(templateData),
+            isPublic: 1
+          }).then(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '已更新公共模板', icon: 'none' })
+            that.loadTemplates()
+          }).catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '更新失败', icon: 'none' })
+          })
+        }
+      })
+      return
+    }
+    const that = this
+    wx.showModal({
+      title: '存为公共模板',
+      content: '确认将模板“' + tpl.name + '”复制到公共模板吗？',
+      success(res) {
+        if (!res.confirm) return
+        wx.showLoading({ title: '保存中...' })
+        api.createProcessTemplate({
+          name: tpl.name,
+          templateJson: JSON.stringify(templateData),
+          isPublic: 1
+        }).then(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '已存入公共工艺预设中心', icon: 'none' })
+          that.loadTemplates()
+        }).catch(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        })
+      }
+    })
+  },
   onNewTemplateNameInput(e) {
     this.setData({ newTemplateName: e.detail.value })
   },
@@ -5054,6 +5127,99 @@ Page({
   closeTemplatePreview() {
     this.setData({ previewTemplateData: null, previewTemplateName: '' })
   },
+  _sortPresetValue(value) {
+    if (Array.isArray(value)) return value.map(item => this._sortPresetValue(item))
+    if (value && typeof value === 'object') {
+      const sorted = {}
+      Object.keys(value).sort().forEach(key => {
+        sorted[key] = this._sortPresetValue(value[key])
+      })
+      return sorted
+    }
+    return value
+  },
+  _stablePresetStringify(value) {
+    return JSON.stringify(this._sortPresetValue(value))
+  },
+  _buildPublicProcessColumns(preset) {
+    return (preset.columns || []).map(col => {
+      const next = {
+        key: col.key,
+        label: col.label,
+        type: col.type || 'number',
+        role: col.role || 'input'
+      }
+      if (col.unit) next.unit = col.unit
+      if (col.formula) next.formula = col.formula
+      const defaultValue = preset.columnValues && preset.columnValues[col.key]
+      if (defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
+        next.defaultValue = defaultValue
+      }
+      return next
+    })
+  },
+  _parsePublicProcessColumns(item) {
+    if (item.columns && item.columns.length) return item.columns
+    try {
+      return JSON.parse(item.columnsJson || '[]')
+    } catch (err) {
+      return []
+    }
+  },
+  _buildPublicMaterialTemplateData(preset) {
+    const params = this._normalizeMaterialPresetParams(preset.params)
+    let templateData = {}
+    try { templateData = JSON.parse(preset.templateJson || '{}') } catch (err) {}
+    templateData.params = params.map(p => ({
+      key: p.key,
+      label: p.label,
+      type: p.type || 'number',
+      unit: p.unit || '',
+      role: p.role || 'input',
+      formula: p.formula || '',
+      defaultValue: p.defaultValue !== undefined && p.defaultValue !== null ? p.defaultValue : ''
+    }))
+    templateData._publicSource = { type: 'personal_preset', text: '来源：个人预设' }
+    return templateData
+  },
+  _buildPublicDeviceTemplateData(preset) {
+    let parsed = { variables: [], subGroups: [] }
+    try { parsed = JSON.parse(preset.templateJson || '{}') } catch (err) {}
+    const category = preset.category || this.data.templateCategory || 'device'
+    const sectionKey = this._getLegacyDeviceBindingKey(parsed, category)
+    return {
+      ...(category === 'device' && sectionKey ? { sectionKey, sectionLabel: parsed.sectionLabel || preset.name || '' } : {}),
+      variables: (parsed.variables || []).map(v => ({
+        key: v.key,
+        label: v.label,
+        type: v.type || 'number',
+        unit: v.unit || '',
+        role: v.role || 'input',
+        formula: v.formula || '',
+        defaultValue: v.defaultValue || ''
+      })),
+      subGroups: (parsed.subGroups || []).map(sg => ({
+        label: sg.label,
+        variables: (sg.variables || []).map(v => ({
+          key: v.key,
+          label: v.label,
+          type: v.type || 'number',
+          unit: v.unit || '',
+          role: v.role || 'input',
+          formula: v.formula || '',
+          defaultValue: v.defaultValue || ''
+        }))
+      })),
+      _publicSource: { type: 'personal_preset', text: '来源：个人预设' }
+    }
+  },
+  _normalizePublicTemplateData(templateJson) {
+    let data = {}
+    try { data = JSON.parse(templateJson || '{}') } catch (err) {}
+    const normalized = this._normalizeProcessTemplateData(data)
+    delete normalized._publicSource
+    return normalized
+  },
   saveCurrentAsTemplate() {
     const name = this.data.newTemplateName.trim()
     if (!name) {
@@ -5075,14 +5241,18 @@ Page({
       delete s._numCols; delete s.subtotalValue; delete s.subtotalLabel
       ;(s.rows || []).forEach(function (r) { delete r._collapsed })
     })
-    api.createProcessTemplate({ name, templateJson: JSON.stringify(structure) }).then(() => {
+    api.createProcessTemplate({ name, templateJson: JSON.stringify(structure), isPublic: 0 }).then(() => {
       wx.showToast({ title: '保存成功', icon: 'success' })
       this.setData({ newTemplateName: '' })
       this.loadTemplates()
     }).catch(() => {})
   },
   renameTemplate(e) {
-    const { id, name } = e.currentTarget.dataset
+    const { id, name, isPublic } = e.currentTarget.dataset
+    if (Number(isPublic) === 1) {
+      wx.showToast({ title: '公共模板请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const that = this
     wx.showModal({
       title: '重命名模版',
@@ -5099,7 +5269,11 @@ Page({
     })
   },
   deleteTemplate(e) {
-    const { id, name } = e.currentTarget.dataset
+    const { id, name, isPublic } = e.currentTarget.dataset
+    if (Number(isPublic) === 1) {
+      wx.showToast({ title: '公共模板请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const that = this
     wx.showModal({
       title: '删除模版',
@@ -5115,7 +5289,11 @@ Page({
     })
   },
   updateTemplateContent(e) {
-    const { id, name } = e.currentTarget.dataset
+    const { id, name, isPublic } = e.currentTarget.dataset
+    if (Number(isPublic) === 1) {
+      wx.showToast({ title: '公共模板请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const cpd = this.data.customProcessData
     if (!cpd) {
       wx.showToast({ title: '当前无工艺结构', icon: 'none' })
@@ -5181,6 +5359,70 @@ Page({
     const dtype = this._getDtype(e)
     const subtype = e.currentTarget.dataset.subtype || ''
     this.setData({ showAddSectionModal: true, isRenamingSection: false, renameSectionOriginalKey: '', newSectionName: '', newSectionKey: '', editingDtype: dtype, editingSubtype: subtype, showProdAddMenu: false, showProdTplMenu: false })
+  },
+  _ensureEnergySection(subtype, options = {}) {
+    const normalizedSubtype = subtype === 'device' ? 'device' : 'material'
+    const arrKey = this._getSectionsKey('energy')
+    const data = this.data.customProcessData || {}
+    if (!data[arrKey]) data[arrKey] = []
+    const defaultKey = options.sectionKey || (normalizedSubtype === 'device' ? 'device_energy' : 'material_energy')
+    const defaultLabel = options.label || (normalizedSubtype === 'device' ? '设备能耗' : '辅料')
+    let sec = data[arrKey].find(s => s.key === defaultKey && s.subtype === normalizedSubtype)
+    if (!sec && !options.sectionKey) sec = data[arrKey].find(s => s.subtype === normalizedSubtype)
+    if (!sec) {
+      let key = defaultKey
+      let idx = 2
+      while (data[arrKey].some(s => s.key === key)) {
+        key = `${defaultKey}_${idx}`
+        idx += 1
+      }
+      sec = {
+        key,
+        label: defaultLabel,
+        collapsed: false,
+        columns: normalizedSubtype === 'device' ? [{ key: 'name', label: '名称', type: 'text', role: 'input' }] : [],
+        rows: [],
+        includedInSummary: true,
+        subtype: normalizedSubtype
+      }
+      data[arrKey].push(sec)
+      this.setData({ customProcessData: data })
+    }
+    return sec.key
+  },
+  _normalizeBindingSectionKey(value) {
+    const key = String(value || '').trim()
+    if (!key) return ''
+    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : ''
+  },
+  _getLegacyDeviceBindingKey(parsed, category) {
+    if ((category || 'device') !== 'device') return ''
+    return this._normalizeBindingSectionKey((parsed && parsed.sectionKey) || '') || 'qianhan'
+  },
+  quickAddDeviceEnergy() {
+    this.setData({ showProdAddMenu: false, showProdTplMenu: false })
+    this.openDeviceTemplateSelector({
+      currentTarget: {
+        dataset: {
+          skey: '',
+          dtype: 'energy',
+          category: 'device'
+        }
+      }
+    })
+  },
+  quickAddMaterialEnergy() {
+    const sKey = this._ensureEnergySection('material')
+    this.setData({ showProdAddMenu: false, showProdTplMenu: false })
+    this.openCustomProcessModal({
+      currentTarget: {
+        dataset: {
+          skey: sKey,
+          dtype: 'energy',
+          subtype: 'material'
+        }
+      }
+    })
   },
   closeAddSectionModal() {
     this.setData({ showAddSectionModal: false })
@@ -5648,6 +5890,8 @@ Page({
       id: template.id,
       name: template.name,
       category: template.category,
+      isPublic: Number(template.isPublic) === 1 ? 1 : 0,
+      templateJson: template.templateJson,
       params: this._normalizeMaterialPresetParams(parsed.params)
     }
   },
@@ -5824,6 +6068,10 @@ Page({
     const id = e.currentTarget.dataset.id
     const preset = this.data.energyMaterialPresets.find(p => String(p.id) === String(id))
     if (!preset) return
+    if (Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     this.setData({
       editingMaterialPresetId: preset.id,
       materialPresetForm: { name: preset.name, params: this._normalizeMaterialPresetParams(preset.params) }
@@ -5833,6 +6081,10 @@ Page({
     const id = e.currentTarget.dataset.id
     const preset = this.data.energyMaterialPresets.find(p => String(p.id) === String(id))
     if (!preset) return
+    if (Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const that = this
     wx.showModal({
       title: '删除预设',
@@ -5848,6 +6100,79 @@ Page({
             wx.showToast({ title: '已删除', icon: 'success' })
           }).catch(() => {})
         }
+      }
+    })
+  },
+  saveMaterialPresetAsPublic(e) {
+    if (!this.data.canSavePublicPreset) {
+      wx.showToast({ title: '您没有公共预设权限', icon: 'none' })
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const preset = this.data.energyMaterialPresets.find(p => String(p.id) === String(id))
+    if (!preset || Number(preset.isPublic) === 1) return
+    const templateData = this._buildPublicMaterialTemplateData(preset)
+    const templateJson = JSON.stringify(templateData)
+    const duplicate = (this.data.energyMaterialPresets || []).find(item =>
+      Number(item.isPublic) === 1 &&
+      String(item.id) !== String(id) &&
+      (item.name || '').trim() === (preset.name || '').trim()
+    )
+    if (duplicate) {
+      let duplicateData = {}
+      try { duplicateData = JSON.parse(duplicate.templateJson || '{}') } catch (err) {}
+      delete duplicateData._publicSource
+      const currentCompare = { ...templateData }
+      delete currentCompare._publicSource
+      const sameContent = this._stablePresetStringify(duplicateData) === this._stablePresetStringify(currentCompare)
+      if (sameContent) {
+        wx.showToast({ title: '公共辅料预设已存在同名项', icon: 'none' })
+        return
+      }
+      const that = this
+      wx.showModal({
+        title: '更新公共辅料预设',
+        content: '已存在同名公共辅料预设，是否更新为当前参数？',
+        success(res) {
+          if (!res.confirm) return
+          wx.showLoading({ title: '更新中...' })
+          api.updateEnergyDeviceTemplate(duplicate.id, {
+            name: preset.name,
+            category: 'material',
+            templateJson,
+            isPublic: 1
+          }).then(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '已更新公共辅料预设', icon: 'none' })
+            that.loadEnergyMaterialPresets()
+          }).catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '更新失败', icon: 'none' })
+          })
+        }
+      })
+      return
+    }
+    const that = this
+    wx.showModal({
+      title: '存为公共预设',
+      content: '确认将预设“' + preset.name + '”复制到公共辅料预设吗？',
+      success(res) {
+        if (!res.confirm) return
+        wx.showLoading({ title: '保存中...' })
+        api.createEnergyDeviceTemplate({
+          name: preset.name,
+          category: 'material',
+          templateJson,
+          isPublic: 1
+        }).then(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '已存入公共工艺预设中心', icon: 'none' })
+          that.loadEnergyMaterialPresets()
+        }).catch(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        })
       }
     })
   },
@@ -5878,6 +6203,10 @@ Page({
     if (!name) { wx.showToast({ title: '请填写预设名称', icon: 'none' }); return }
     const params = this._normalizeMaterialPresetParams(form.params)
     if (!params.length) { wx.showToast({ title: '请至少添加一个变量', icon: 'none' }); return }
+    if (category === 'device' && (form.sectionKey || '').trim() && !sectionKey) {
+      wx.showToast({ title: '设备能耗变量名只能用英文、数字和下划线', icon: 'none' })
+      return
+    }
     const templateJson = JSON.stringify({
       params: params.map(p => ({
         key: p.key,
@@ -5889,7 +6218,7 @@ Page({
         defaultValue: p.defaultValue !== undefined && p.defaultValue !== null ? p.defaultValue : ''
       }))
     })
-    const data = { name, category: 'material', templateJson }
+    const data = { name, category: 'material', templateJson, isPublic: 0 }
     const that = this
     const editId = this.data.editingMaterialPresetId
     const apiCall = editId ? api.updateEnergyDeviceTemplate(editId, data) : api.createEnergyDeviceTemplate(data)
@@ -6011,6 +6340,14 @@ Page({
     if (!item) return
     let parsed = { variables: [], subGroups: [] }
     try { parsed = JSON.parse(item.templateJson) } catch (err) {}
+    const category = item.category || this.data.templateCategory || 'device'
+    if (category === 'device') {
+      const bindingKey = this._getLegacyDeviceBindingKey(parsed, category)
+      if (bindingKey) {
+        parsed.sectionKey = bindingKey
+        parsed.sectionLabel = parsed.sectionLabel || item.name || ''
+      }
+    }
     // 收集 key→label 映射，生成可读公式
     const keyLabelMap = {}
     ;(parsed.variables || []).forEach(v => { keyLabelMap[v.key] = v.label || v.key })
@@ -6072,7 +6409,20 @@ Page({
     const parsed = selectedDeviceTemplate._parsed || {}
     const dtype = editingDtype || 'energy'
     const arrKey = this._getSectionsKey(dtype)
-    const sec = (customProcessData[arrKey] || []).find(s => s.key === customProcessSectionKey)
+    let targetSectionKey = customProcessSectionKey
+    if (dtype === 'energy') {
+      const bindingKey = this._normalizeBindingSectionKey(parsed.sectionKey || '')
+      if (!targetSectionKey && bindingKey) {
+        targetSectionKey = this._ensureEnergySection('device', {
+          sectionKey: bindingKey,
+          label: parsed.sectionLabel || name || '设备能耗'
+        })
+      }
+      if (!targetSectionKey) {
+        targetSectionKey = this._ensureEnergySection('device')
+      }
+    }
+    const sec = (customProcessData[arrKey] || []).find(s => s.key === targetSectionKey)
     if (!sec) return
     const newId = sec.rows.length > 0 ? Math.max(...sec.rows.map(r => r.id)) + 1 : 1
 
@@ -6128,7 +6478,7 @@ Page({
       sec.rows.push(row)
     }
 
-    this.setData({ customProcessData, showDeviceTemplateSelector: false })
+    this.setData({ customProcessData, customProcessSectionKey: targetSectionKey, showDeviceTemplateSelector: false })
     this.recalcAllSections(dtype)
     this.recalcSummary()
     wx.showToast({ title: '已添加', icon: 'success' })
@@ -6144,7 +6494,7 @@ Page({
     this.setData({
       showDevicePresetManager: true,
       editingDevicePresetId: null,
-      devicePresetForm: { name: '', variables: [], subGroups: [] }
+      devicePresetForm: { name: '', sectionKey: '', variables: [], subGroups: [] }
     })
   },
   closeDevicePresetManager() {
@@ -6153,19 +6503,25 @@ Page({
   cancelEditDevicePreset() {
     this.setData({
       editingDevicePresetId: null,
-      devicePresetForm: { name: '', variables: [], subGroups: [] }
+      devicePresetForm: { name: '', sectionKey: '', variables: [], subGroups: [] }
     })
   },
   editDevicePreset(e) {
     const id = parseInt(e.currentTarget.dataset.id)
     const preset = this.data.devicePresets.find(p => p.id === id)
     if (!preset) return
+    if (Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     let parsed = { variables: [], subGroups: [] }
     try { parsed = JSON.parse(preset.templateJson) } catch (err) {}
+    const category = preset.category || this.data.templateCategory || 'device'
     this.setData({
       editingDevicePresetId: id,
       devicePresetForm: {
         name: preset.name,
+        sectionKey: this._getLegacyDeviceBindingKey(parsed, category),
         variables: (parsed.variables || []).map(v => ({ ...v })),
         subGroups: (parsed.subGroups || []).map(sg => ({
           label: sg.label,
@@ -6178,6 +6534,10 @@ Page({
     const id = parseInt(e.currentTarget.dataset.id)
     const preset = this.data.devicePresets.find(p => p.id === id)
     if (!preset) return
+    if (Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const that = this
     wx.showModal({
       title: '删除预设', content: '确认删除预设"' + preset.name + '"？',
@@ -6189,6 +6549,86 @@ Page({
             wx.showToast({ title: '已删除', icon: 'success' })
           }).catch(() => {})
         }
+      }
+    })
+  },
+  saveDevicePresetAsPublic(e) {
+    if (!this.data.canSavePublicPreset) {
+      wx.showToast({ title: '您没有公共预设权限', icon: 'none' })
+      return
+    }
+    const id = parseInt(e.currentTarget.dataset.id)
+    const preset = this.data.devicePresets.find(p => p.id === id)
+    if (!preset || Number(preset.isPublic) === 1) return
+    const duplicate = (this.data.devicePresets || []).find(item =>
+      Number(item.isPublic) === 1 &&
+      item.id !== id &&
+      (item.name || '').trim() === (preset.name || '').trim() &&
+      (item.category || this.data.templateCategory || 'device') === (preset.category || this.data.templateCategory || 'device')
+    )
+    const templateData = this._buildPublicDeviceTemplateData(preset)
+    const templateJson = JSON.stringify(templateData)
+    const category = preset.category || this.data.templateCategory || 'device'
+    const categoryText = category === 'mold' ? '公共模具预设' : (category === 'material' ? '公共辅料预设' : '公共设备能耗预设')
+    if (duplicate) {
+      let duplicateData = {}
+      try { duplicateData = JSON.parse(duplicate.templateJson || '{}') } catch (err) {}
+      delete duplicateData._publicSource
+      const currentCompare = { ...templateData }
+      delete currentCompare._publicSource
+      const sameContent = this._stablePresetStringify(duplicateData) === this._stablePresetStringify(currentCompare)
+      if (sameContent) {
+        wx.showToast({ title: '公共预设已存在同名项', icon: 'none' })
+        return
+      }
+      const that = this
+      wx.showModal({
+        title: '更新公共预设',
+        content: '已存在同名公共预设，是否更新为当前内容？',
+        success(res) {
+          if (!res.confirm) return
+          wx.showLoading({ title: '更新中...' })
+          api.updateEnergyDeviceTemplate(duplicate.id, {
+            name: preset.name,
+            category,
+            templateJson,
+            isPublic: 1
+          }).then(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '已更新公共预设', icon: 'none' })
+            api.getEnergyDeviceTemplates(category).then(list => {
+              that.setData({ devicePresets: list || [] })
+            }).catch(() => {})
+          }).catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '更新失败', icon: 'none' })
+          })
+        }
+      })
+      return
+    }
+    const that = this
+    wx.showModal({
+      title: '存为公共预设',
+      content: '确认将预设“' + preset.name + '”复制到' + categoryText + '吗？',
+      success(res) {
+        if (!res.confirm) return
+        wx.showLoading({ title: '保存中...' })
+        api.createEnergyDeviceTemplate({
+          name: preset.name,
+          category,
+          templateJson,
+          isPublic: 1
+        }).then(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '已存入公共工艺预设中心', icon: 'none' })
+          api.getEnergyDeviceTemplates(category).then(list => {
+            that.setData({ devicePresets: list || [] })
+          }).catch(() => {})
+        }).catch(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        })
       }
     })
   },
@@ -6250,16 +6690,22 @@ Page({
   confirmDevicePreset() {
     const form = this.data.devicePresetForm
     const name = (form.name || '').trim()
+    const category = this.data.templateCategory || 'device'
+    const sectionKey = category === 'device' ? this._normalizeBindingSectionKey(form.sectionKey || '') : ''
+    if (category === 'device' && (form.sectionKey || '').trim() && !sectionKey) {
+      wx.showToast({ title: '设备能耗变量名只能用英文、数字和下划线', icon: 'none' })
+      return
+    }
     if (!name) { wx.showToast({ title: '请填写预设名称', icon: 'none' }); return }
     const templateJson = JSON.stringify({
+      ...(category === 'device' && sectionKey ? { sectionKey, sectionLabel: name } : {}),
       variables: (form.variables || []).map(v => ({ key: v.key, label: v.label, type: v.type || 'number', unit: v.unit, role: v.role, formula: v.formula || '', defaultValue: v.defaultValue || '' })),
       subGroups: (form.subGroups || []).map(sg => ({
         label: sg.label,
         variables: (sg.variables || []).map(v => ({ key: v.key, label: v.label, type: v.type || 'number', unit: v.unit, role: v.role, formula: v.formula || '', defaultValue: v.defaultValue || '' }))
       }))
     })
-    const category = this.data.templateCategory || 'device'
-    const data = { name, templateJson, category }
+    const data = { name, templateJson, category, isPublic: 0 }
     const that = this
     const editId = this.data.editingDevicePresetId
     const apiCall = editId ? api.updateEnergyDeviceTemplate(editId, data) : api.createEnergyDeviceTemplate(data)
@@ -6437,12 +6883,10 @@ Page({
       return col
     })
     const isEdit = !!this.data.editingPresetId
-    const url = isEdit ? '/process/' + this.data.editingPresetId : '/process'
-    const method = isEdit ? 'PUT' : 'POST'
     const data = {
       processName: form.name.trim(), sectionKey,
       sectionLabel: form.sectionLabel.trim(),
-      columnsJson: JSON.stringify(columnsForSave), isActive: 1
+      columnsJson: JSON.stringify(columnsForSave), isActive: 1, isPublic: 0
     }
     wx.showLoading({ title: '保存中...' })
     const savePromise = isEdit
@@ -6455,13 +6899,17 @@ Page({
         presetForm: { name: '', sectionLabel: '', sectionKey: '', columns: [{ key: 'name', label: '工序名称', type: 'text', role: 'input', unit: '', formula: '', defaultValue: '' }] },
         presetSectionSearch: ''
       })
-      this.loadProcessList().then(() => this.loadProcessPresets())
+      this.loadProcessPresets(true)
     }).catch(() => { wx.hideLoading(); wx.showToast({ title: '保存失败', icon: 'none' }) })
   },
   editPreset(e) {
     const id = e.currentTarget.dataset.id
     const preset = this.data.processPresets.find(p => p.id === id)
     if (!preset) return
+    if (Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const columns = (preset.columns || []).map(c => ({
       key: c.key, label: c.label, type: c.type || 'number', role: c.role || 'input',
       unit: c.unit || '', formula: c.formula || '',
@@ -6503,6 +6951,11 @@ Page({
   },
   deletePreset(e) {
     const id = e.currentTarget.dataset.id
+    const preset = this.data.processPresets.find(p => p.id === id)
+    if (preset && Number(preset.isPublic) === 1) {
+      wx.showToast({ title: '公共预设请到公共预设中心维护', icon: 'none' })
+      return
+    }
     const that = this
     wx.showModal({
       title: '删除预设',
@@ -6513,7 +6966,7 @@ Page({
           api.deleteProcess(id).then(() => {
             wx.hideLoading()
             wx.showToast({ title: '已删除', icon: 'success' })
-            that.loadProcessList().then(() => that.loadProcessPresets())
+            that.loadProcessPresets(true)
           }).catch(() => {
             wx.hideLoading()
             wx.showToast({ title: '删除失败', icon: 'none' })
@@ -6524,6 +6977,81 @@ Page({
   },
 
   // 行级公式编辑（表格内点击输出值）
+  saveProcessPresetAsPublic(e) {
+    if (!this.data.canSavePublicPreset) {
+      wx.showToast({ title: '您没有公共预设权限', icon: 'none' })
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const preset = this.data.processPresets.find(p => String(p.id) === String(id))
+    if (!preset || Number(preset.isPublic) === 1) return
+    const duplicate = (this.data.processPresets || []).find(item =>
+      Number(item.isPublic) === 1 &&
+      String(item.id) !== String(id) &&
+      (item.name || '').trim() === (preset.name || '').trim() &&
+      (item.sectionKey || '') === (preset.sectionKey || '')
+    )
+    const columns = this._buildPublicProcessColumns(preset)
+    if (duplicate) {
+      const sameContent = this._stablePresetStringify(this._parsePublicProcessColumns(duplicate))
+        === this._stablePresetStringify(columns)
+      if (sameContent) {
+        wx.showToast({ title: '公共工序预设已存在同名项', icon: 'none' })
+        return
+      }
+      const that = this
+      wx.showModal({
+        title: '更新公共工序预设',
+        content: '已存在同名公共工序预设，是否更新为当前参数？',
+        success(res) {
+          if (!res.confirm) return
+          wx.showLoading({ title: '更新中...' })
+          api.updateProcess(duplicate.id, {
+            processName: preset.processName || preset.name,
+            sectionKey: preset.sectionKey || '',
+            sectionLabel: preset.sectionLabel || '',
+            columnsJson: JSON.stringify(columns),
+            ownerUserId: -1,
+            isActive: 1,
+            isPublic: 1
+          }).then(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '已更新公共工序预设', icon: 'none' })
+            that.loadProcessPresets(true)
+          }).catch(() => {
+            wx.hideLoading()
+            wx.showToast({ title: '更新失败', icon: 'none' })
+          })
+        }
+      })
+      return
+    }
+    const that = this
+    wx.showModal({
+      title: '存为公共预设',
+      content: '确认将工序预设“' + preset.name + '”复制到公共工序预设吗？',
+      success(res) {
+        if (!res.confirm) return
+        wx.showLoading({ title: '保存中...' })
+        api.createProcess({
+          processName: preset.processName || preset.name,
+          sectionKey: preset.sectionKey || '',
+          sectionLabel: preset.sectionLabel || '',
+          columnsJson: JSON.stringify(columns),
+          ownerUserId: -1,
+          isActive: 1,
+          isPublic: 1
+        }).then(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '已存入公共工艺预设中心', icon: 'none' })
+          that.loadProcessPresets(true)
+        }).catch(() => {
+          wx.hideLoading()
+          wx.showToast({ title: '保存失败', icon: 'none' })
+        })
+      }
+    })
+  },
   openRowFormulaEditor(e) {
     const { skey, id, field, dtype } = e.currentTarget.dataset
     const arrKey = this._getSectionsKey(dtype || 'process')
@@ -6965,6 +7493,37 @@ Page({
   },
 
   // ==================== 导出 ====================
+  loadProcessPresets(forceRefresh) {
+    const cached = this.data.processPresets || []
+    if (!forceRefresh && cached.length) return cached
+    api.getProcessPresetList().then(list => {
+      const presets = (list || []).map(p => {
+        let columns = [{ key: 'name', label: '工序名称', type: 'text', role: 'input' }]
+        const name = p.processName || p.name || ''
+        const columnValues = { name }
+        try {
+          if (p.columnsJson) {
+            const parsed = JSON.parse(p.columnsJson)
+            if (parsed.length) columns = parsed
+            columns.forEach(c => { if (c.defaultValue !== undefined) columnValues[c.key] = c.defaultValue })
+          }
+        } catch (e) {}
+        return {
+          id: p.id,
+          name,
+          processName: name,
+          isPublic: Number(p.isPublic) === 1 ? 1 : 0,
+          sectionKey: p.sectionKey || '',
+          sectionLabel: p.sectionLabel || '',
+          columns,
+          columnValues
+        }
+      })
+      this.setData({ processPresets: presets })
+    }).catch(() => {})
+    return cached
+  },
+
   exportQuote() {
     const {
       alPrice, cartCollectors, cartFins, cartTubes, collectorSpecs, finSpecs, tubeSpecs,

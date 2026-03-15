@@ -4114,7 +4114,8 @@ page {
 .tpl-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 16rpx;
   padding: 20rpx 0;
   border-bottom: 1rpx solid #f3f4f6;
 }
@@ -4123,20 +4124,38 @@ page {
   border-color: #059669;
 }
 .tpl-name {
+  display: block;
   font-size: 28rpx;
   color: #374151;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.tpl-main {
   flex: 1;
+  min-width: 0;
+}
+.tpl-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 10rpx;
 }
 .tpl-actions {
   display: flex;
   gap: 16rpx;
+  flex-shrink: 0;
 }
 .tpl-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24rpx;
   padding: 8rpx 20rpx;
   border-radius: 8rpx;
   background: #f3f4f6;
   color: #6b7280;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .tpl-action-btn.danger {
   background: #fef2f2;
@@ -4378,11 +4397,21 @@ page {
   color: #374151;
 }
 .preset-option-section {
+  display: inline-flex;
+  align-items: center;
   font-size: 22rpx;
   color: #9ca3af;
   background: #f3f4f6;
   padding: 4rpx 12rpx;
   border-radius: 6rpx;
+  line-height: 1.4;
+  max-width: 100%;
+}
+.preset-public-action {
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1rpx solid #bfdbfe;
+  white-space: nowrap;
 }
 .preset-target-hint {
   padding: 12rpx 20rpx;

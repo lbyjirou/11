@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "能耗模版管理")
+@Tag(name = "能耗模板管理")
 @RestController
 @RequestMapping("/energy-device-template")
 @RequiredArgsConstructor
@@ -19,46 +19,61 @@ public class EnergyDeviceTemplateController {
 
     private final EnergyDeviceTemplateService energyDeviceTemplateService;
 
-    @Operation(summary = "获取当前用户的模版列表（device/mold/material）")
+    @Operation(summary = "获取模板列表")
     @GetMapping("/list")
-    @PreAuthorize("@perm.check('TAB_VIEW_TECH')")
-    public Result<List<EnergyDeviceTemplate>> list(@RequestParam(defaultValue = "device") String category) {
-        return Result.success(energyDeviceTemplateService.listByCurrentUser(category));
+    @PreAuthorize("@perm.check('TAB_VIEW_TECH') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
+    public Result<List<EnergyDeviceTemplate>> list(
+            @RequestParam(defaultValue = "device") String category,
+            @RequestParam(defaultValue = "visible") String scope) {
+        if ("public".equalsIgnoreCase(scope)) {
+            return Result.success(energyDeviceTemplateService.listPublic(category));
+        }
+        return Result.success(energyDeviceTemplateService.listVisible(category));
     }
 
-    @Operation(summary = "模糊搜索模版（device/mold/material）")
+    @Operation(summary = "搜索模板")
     @GetMapping("/search")
-    @PreAuthorize("@perm.check('TAB_VIEW_TECH')")
-    public Result<List<EnergyDeviceTemplate>> search(@RequestParam(required = false) String keyword,
-                                                      @RequestParam(defaultValue = "device") String category) {
-        return Result.success(energyDeviceTemplateService.search(keyword, category));
+    @PreAuthorize("@perm.check('TAB_VIEW_TECH') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
+    public Result<List<EnergyDeviceTemplate>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "device") String category,
+            @RequestParam(defaultValue = "visible") String scope) {
+        return Result.success(energyDeviceTemplateService.search(
+                keyword,
+                category,
+                "public".equalsIgnoreCase(scope)
+        ));
     }
 
-    @Operation(summary = "创建模版（device/mold/material）")
+    @Operation(summary = "创建模板")
     @PostMapping
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> create(@RequestBody EnergyDeviceTemplate template) {
-        energyDeviceTemplateService.createTemplate(template);
-        return Result.success();
+        try {
+            energyDeviceTemplateService.createTemplate(template);
+            return Result.success();
+        } catch (IllegalStateException ex) {
+            return Result.error(ex.getMessage());
+        }
     }
 
-    @Operation(summary = "更新模版（device/mold/material）")
+    @Operation(summary = "更新模板")
     @PutMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> update(@PathVariable Long id,
                                @RequestBody EnergyDeviceTemplate template) {
-        if (!energyDeviceTemplateService.updateOwnTemplate(id, template)) {
-            return Result.error("模版不存在或无权修改");
+        if (!energyDeviceTemplateService.updateManagedTemplate(id, template)) {
+            return Result.error("模板不存在或无权修改");
         }
         return Result.success();
     }
 
-    @Operation(summary = "删除模版（device/mold/material）")
+    @Operation(summary = "删除模板")
     @DeleteMapping("/{id}")
-    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS')")
+    @PreAuthorize("@perm.check('TAB_EDIT_PROCESS') or @perm.check('SYSTEM_PROCESS_PRESET_CENTER')")
     public Result<Void> delete(@PathVariable Long id) {
-        if (!energyDeviceTemplateService.deleteOwnTemplate(id)) {
-            return Result.error("模版不存在或无权删除");
+        if (!energyDeviceTemplateService.deleteManagedTemplate(id)) {
+            return Result.error("模板不存在或无权删除");
         }
         return Result.success();
     }

@@ -89,6 +89,9 @@ public class QuoteController {
             return Result.error("报价单不存在");
         }
         SysUser currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return Result.error("用户未登录");
+        }
         String role = currentUser != null ? currentUser.getRole() : null;
         // SALES只能编辑销售状态
         if ("SALES".equals(role) && !"DRAFT".equals(order.getStatus())) {
@@ -106,6 +109,21 @@ public class QuoteController {
         if ("LOGISTICS".equals(role) && !"PENDING_LOGISTICS".equals(order.getStatus())) {
             return Result.error("只能在物流状态编辑");
         }
+        if ("SALES".equals(role) && !currentUser.getId().equals(order.getCreatorId())) {
+            return Result.error("仅创建者可编辑该报价单");
+        }
+        if ("TECH".equals(role) && (order.getTechHandlerId() == null
+                || !currentUser.getId().equals(order.getTechHandlerId()))) {
+            return Result.error("该报价单未分配给当前技术员");
+        }
+        if ("PROCESS".equals(role) && (order.getProcessHandlerId() == null
+                || !currentUser.getId().equals(order.getProcessHandlerId()))) {
+            return Result.error("该报价单未分配给当前生产员");
+        }
+        if ("LOGISTICS".equals(role) && (order.getLogisticsHandlerId() == null
+                || !currentUser.getId().equals(order.getLogisticsHandlerId()))) {
+            return Result.error("该报价单未分配给当前物流员");
+        }
         quoteService.updateQuote(id, dto, role);
         return Result.success();
     }
@@ -117,6 +135,17 @@ public class QuoteController {
     @PostMapping("/{id}/submit")
     @PreAuthorize("@perm.check('WORKFLOW_SUBMIT')")
     public Result<Map<String, String>> submit(@PathVariable Long id) {
+        SysUser currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return Result.error("用户未登录");
+        }
+        QuoteOrder order = quoteService.getById(id);
+        if (order == null) {
+            return Result.error("报价单不存在");
+        }
+        if (!currentUser.getId().equals(order.getCreatorId())) {
+            return Result.error("仅创建者可提交该报价单");
+        }
         QuoteStatusEnum newStatus = quoteService.submitToTech(id);
         return Result.success(Map.of("newStatus", newStatus.getCode(), "statusName", newStatus.getName()));
     }
@@ -135,6 +164,23 @@ public class QuoteController {
         if (currentUser == null) {
             return Result.error("用户未登录");
         }
+        QuoteOrder order = quoteService.getById(id);
+        if (order == null) {
+            return Result.error("报价单不存在");
+        }
+        String role = currentUser.getRole();
+        if ("TECH".equals(role) && (order.getTechHandlerId() == null
+                || !currentUser.getId().equals(order.getTechHandlerId()))) {
+            return Result.error("该报价单未分配给当前技术员");
+        }
+        if ("PROCESS".equals(role) && (order.getProcessHandlerId() == null
+                || !currentUser.getId().equals(order.getProcessHandlerId()))) {
+            return Result.error("该报价单未分配给当前生产员");
+        }
+        if ("LOGISTICS".equals(role) && (order.getLogisticsHandlerId() == null
+                || !currentUser.getId().equals(order.getLogisticsHandlerId()))) {
+            return Result.error("该报价单未分配给当前物流员");
+        }
         QuoteStatusEnum newStatus = quoteService.advanceStatus(id, currentUser.getRole());
         return Result.success(Map.of("newStatus", newStatus.getCode(), "statusName", newStatus.getName()));
     }
@@ -148,6 +194,9 @@ public class QuoteController {
         QuoteOrder order = quoteService.getById(id);
         if (order == null) return Result.error("报价单不存在");
         SysUser currentUser = getCurrentUser();
+        if (currentUser != null && !canViewOrder(order, currentUser)) {
+            return Result.error("无权限查看该报价单");
+        }
         if (currentUser != null) {
             filterByPermission(order, rbacService.getUserPermissions(currentUser.getId()));
         }
@@ -293,5 +342,28 @@ public class QuoteController {
                     new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
         }
         return null;
+    }
+
+    private boolean canViewOrder(QuoteOrder order, SysUser user) {
+        String role = user.getRole();
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
+        if ("MANAGER".equals(role)) {
+            return order.getCurrentHandlerId() != null && user.getId().equals(order.getCurrentHandlerId());
+        }
+        if ("SALES".equals(role)) {
+            return user.getId().equals(order.getCreatorId());
+        }
+        if ("TECH".equals(role)) {
+            return order.getTechHandlerId() != null && user.getId().equals(order.getTechHandlerId());
+        }
+        if ("PROCESS".equals(role)) {
+            return order.getProcessHandlerId() != null && user.getId().equals(order.getProcessHandlerId());
+        }
+        if ("LOGISTICS".equals(role)) {
+            return order.getLogisticsHandlerId() != null && user.getId().equals(order.getLogisticsHandlerId());
+        }
+        return false;
     }
 }

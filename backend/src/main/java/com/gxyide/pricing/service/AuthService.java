@@ -60,6 +60,13 @@ public class AuthService {
                 .phone(user.getPhone())
                 .role(user.getRole())
                 .status(user.getStatus())
+                .techUserId(user.getTechUserId())
+                .processUserId(user.getProcessUserId())
+                .logisticsUserId(user.getLogisticsUserId())
+                .techProcessUserId(user.getTechProcessUserId())
+                .techLogisticsUserId(user.getTechLogisticsUserId())
+                .processLogisticsUserId(user.getProcessLogisticsUserId())
+                .logisticsApproveUserId(user.getLogisticsApproveUserId())
                 .roles(rbacService.getUserRoleCodes(user.getId()))
                 .permissions(rbacService.getUserPermissions(user.getId()))
                 .build();

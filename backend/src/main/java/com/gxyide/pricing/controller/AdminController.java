@@ -39,7 +39,7 @@ public class AdminController {
 
     @Operation(summary = "获取用户列表")
     @GetMapping("/user/list")
-    @PreAuthorize("@perm.check('SYSTEM_USER_MANAGE')")
+    @PreAuthorize("@perm.check('SYSTEM_USER_MANAGE') or @perm.anyRole('MANAGER','ADMIN')")
     public Result<Page<SysUser>> listUsers(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
@@ -48,6 +48,54 @@ public class AdminController {
                 new LambdaQueryWrapper<SysUser>().orderByDesc(SysUser::getCreateTime));
         result.getRecords().forEach(u -> u.setPassword(null));
         return Result.success(result);
+    }
+
+    @Operation(summary = "获取销售归属配置")
+    @GetMapping("/user/{id}/assignments")
+    @PreAuthorize("@perm.check('SYSTEM_USER_MANAGE') or @perm.anyRole('MANAGER','ADMIN')")
+    public Result<UserVO> getAssignments(@PathVariable Long id) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        return Result.success(UserVO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .role(user.getRole())
+                .techUserId(user.getTechUserId())
+                .processUserId(user.getProcessUserId())
+                .logisticsUserId(user.getLogisticsUserId())
+                .techProcessUserId(user.getTechProcessUserId())
+                .techLogisticsUserId(user.getTechLogisticsUserId())
+                .processLogisticsUserId(user.getProcessLogisticsUserId())
+                .logisticsApproveUserId(user.getLogisticsApproveUserId())
+                .build());
+    }
+
+    @Operation(summary = "设置销售归属配置")
+    @PostMapping("/user/{id}/assignments")
+    @PreAuthorize("@perm.check('SYSTEM_USER_MANAGE') or @perm.anyRole('MANAGER','ADMIN')")
+    public Result<Void> setAssignments(@PathVariable Long id, @RequestBody UserCreateDTO dto) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        String role = user.getRole();
+        if ("SALES".equals(role)) {
+            user.setTechUserId(dto.getTechUserId());
+            user.setProcessUserId(dto.getProcessUserId());
+            user.setLogisticsUserId(dto.getLogisticsUserId());
+        } else if ("TECH".equals(role)) {
+            user.setTechProcessUserId(dto.getTechProcessUserId());
+            user.setTechLogisticsUserId(dto.getTechLogisticsUserId());
+        } else if ("PROCESS".equals(role)) {
+            user.setProcessLogisticsUserId(dto.getProcessLogisticsUserId());
+        } else if ("LOGISTICS".equals(role)) {
+            user.setLogisticsApproveUserId(dto.getLogisticsApproveUserId());
+        }
+        sysUserMapper.updateById(user);
+        return Result.success();
     }
 
     @Operation(summary = "创建用户")
@@ -71,6 +119,13 @@ public class AdminController {
         user.setRealName(dto.getRealName());
         user.setPhone(dto.getPhone());
         user.setRole(dto.getRole());
+        user.setTechUserId(dto.getTechUserId());
+        user.setProcessUserId(dto.getProcessUserId());
+        user.setLogisticsUserId(dto.getLogisticsUserId());
+        user.setTechProcessUserId(dto.getTechProcessUserId());
+        user.setTechLogisticsUserId(dto.getTechLogisticsUserId());
+        user.setProcessLogisticsUserId(dto.getProcessLogisticsUserId());
+        user.setLogisticsApproveUserId(dto.getLogisticsApproveUserId());
         user.setStatus(1);
         sysUserMapper.insert(user);
 
@@ -110,6 +165,17 @@ public class AdminController {
         if (dto.getRealName() != null) user.setRealName(dto.getRealName());
         if (dto.getPhone() != null) user.setPhone(dto.getPhone());
         if (dto.getRole() != null) user.setRole(dto.getRole());
+        if (dto.getTechUserId() != null || dto.getProcessUserId() != null || dto.getLogisticsUserId() != null) {
+            user.setTechUserId(dto.getTechUserId());
+            user.setProcessUserId(dto.getProcessUserId());
+            user.setLogisticsUserId(dto.getLogisticsUserId());
+        }
+        if (dto.getTechProcessUserId() != null || dto.getTechLogisticsUserId() != null || dto.getProcessLogisticsUserId() != null || dto.getLogisticsApproveUserId() != null) {
+            user.setTechProcessUserId(dto.getTechProcessUserId());
+            user.setTechLogisticsUserId(dto.getTechLogisticsUserId());
+            user.setProcessLogisticsUserId(dto.getProcessLogisticsUserId());
+            user.setLogisticsApproveUserId(dto.getLogisticsApproveUserId());
+        }
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }

@@ -3,99 +3,607 @@
     <view class="back-btn" bindtap="goBack">
       <view class="back-arrow"></view>
     </view>
-    <text class="nav-title">预设工序管理</text>
-  </view>
-
-  <view class="action-bar">
-    <view class="add-btn" bindtap="showAddModal">
-      <text>+ 新增预设工序</text>
+    <view class="nav-main">
+      <text class="nav-title">公共工艺预设中心</text>
+      <text class="nav-subtitle">统一维护工艺员共用的公共预设</text>
     </view>
   </view>
 
-  <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled bindrefresherrefresh="onRefresh" refresher-triggered="{{refreshing}}">
-    <view class="empty-state" wx:if="{{!loading && processList.length === 0}}">
-      <text class="empty-text">暂无预设工序</text>
+  <view class="tab-bar">
+    <view
+      class="tab-item {{currentTab === item.key ? 'active' : ''}}"
+      wx:for="{{tabs}}"
+      wx:key="key"
+      data-tab="{{item.key}}"
+      bindtap="switchTab"
+    >
+      {{item.label}}
     </view>
+  </view>
 
-    <view class="process-list" wx:if="{{processList.length > 0}}">
-      <view class="process-item {{item.isActive === 0 ? 'disabled' : ''}}" wx:for="{{processList}}" wx:key="id">
-        <view class="process-info">
-          <view class="process-name">{{item.processName}}</view>
-          <view class="process-meta">
-            <text class="process-tag" wx:if="{{item.sectionLabel}}">{{item.sectionLabel}}</text>
-            <text class="process-tag">{{item.isActive === 1 ? '启用' : '禁用'}}</text>
-          </view>
-        </view>
-        <view class="process-actions">
-          <view class="action-btn toggle {{item.isActive === 1 ? 'on' : 'off'}}" bindtap="toggleActive" data-item="{{item}}">
-            {{item.isActive === 1 ? '启用' : '禁用'}}
-          </view>
-          <view class="action-btn edit" bindtap="editProcess" data-item="{{item}}">编辑</view>
-          <view class="action-btn delete" bindtap="deleteProcess" data-item="{{item}}">删除</view>
-        </view>
+  <view class="toolbar">
+    <view class="toolbar-tip">
+      <view class="toolbar-tip-texts">
+        <text class="tip-title">公共工艺预设</text>
+        <text class="tip-text">这里维护的是全体工艺员共享的公共预设</text>
       </view>
     </view>
-    <view class="bottom-placeholder"></view>
+    <view class="add-btn" bindtap="openAddModal">
+      <text class="add-btn-icon">+</text>
+      <text class="add-btn-label">新增</text>
+    </view>
+  </view>
+
+  <scroll-view class="content-scroll" scroll-y="true">
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <block wx:if="{{!loading && currentTab === 'process'}}">
+      <view class="empty-state" wx:if="{{!processList.length}}">暂无公共工序预设</view>
+      <view class="card-list" wx:else>
+        <view class="preset-card" wx:for="{{processList}}" wx:key="id" data-item="{{item}}">
+          <view class="card-top">
+            <view class="card-main">
+              <view class="card-title-row">
+                <text class="card-title">{{item.processName || item.name}}</text>
+                <text wx:if="{{item.sourceTagText}}" class="source-badge">{{item.sourceTagText}}</text>
+              </view>
+              <text class="card-desc">区域：{{item.sectionLabel || '-'}}</text>
+            </view>
+            <view class="card-actions">
+              <text class="action-link" data-item="{{item}}" bindtap="copyProcessItem">复制</text>
+              <text class="action-link" data-item="{{item}}" bindtap="editProcessItem">编辑</text>
+              <text class="action-link danger" data-item="{{item}}" bindtap="deleteProcessItem">删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{!loading && currentTab === 'energy'}}">
+      <view class="sub-tab-bar">
+        <view
+          class="sub-tab-item {{currentEnergyCategory === item.key ? 'active' : ''}}"
+          wx:for="{{energyCategories}}"
+          wx:key="key"
+          data-category="{{item.key}}"
+          bindtap="switchEnergyCategory"
+        >
+          {{item.label}}
+        </view>
+      </view>
+
+      <block wx:if="{{currentEnergyCategory === 'device'}}">
+        <view class="empty-state" wx:if="{{!energyList.length}}">暂无公共设备能耗预设</view>
+        <view class="card-list" wx:else>
+          <view class="preset-card" wx:for="{{energyList}}" wx:key="id" data-item="{{item}}">
+            <view class="card-top">
+              <view class="card-main">
+                <view class="card-title-row">
+                  <text class="card-title">{{item.name}}</text>
+                  <text wx:if="{{item.sourceTagText}}" class="source-badge">{{item.sourceTagText}}</text>
+                </view>
+                <text class="card-desc">用于设备能耗预设</text>
+              </view>
+              <view class="card-actions">
+                <text class="action-link" data-item="{{item}}" bindtap="copyDeviceItem">复制</text>
+                <text class="action-link" data-item="{{item}}" bindtap="editDeviceItem">编辑</text>
+                <text class="action-link danger" data-item="{{item}}" bindtap="deleteDeviceItem">删除</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <block wx:if="{{currentEnergyCategory === 'material'}}">
+        <view class="empty-state" wx:if="{{!materialList.length}}">暂无公共辅料预设</view>
+        <view class="card-list" wx:else>
+          <view class="preset-card" wx:for="{{materialList}}" wx:key="id" data-item="{{item}}">
+            <view class="card-top">
+              <view class="card-main">
+                <view class="card-title-row">
+                  <text class="card-title">{{item.name}}</text>
+                  <text wx:if="{{item.sourceTagText}}" class="source-badge">{{item.sourceTagText}}</text>
+                </view>
+                <text class="card-desc">用于辅料预设</text>
+              </view>
+              <view class="card-actions">
+                <text class="action-link" data-item="{{item}}" bindtap="copyDeviceItem">复制</text>
+                <text class="action-link" data-item="{{item}}" bindtap="editDeviceItem">编辑</text>
+                <text class="action-link danger" data-item="{{item}}" bindtap="deleteDeviceItem">删除</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <block wx:if="{{!loading && currentTab === 'mold'}}">
+      <view class="empty-state" wx:if="{{!moldList.length}}">暂无公共模具预设</view>
+      <view class="card-list" wx:else>
+        <view class="preset-card" wx:for="{{moldList}}" wx:key="id" data-item="{{item}}">
+          <view class="card-top">
+            <view class="card-main">
+              <view class="card-title-row">
+                <text class="card-title">{{item.name}}</text>
+                <text wx:if="{{item.sourceTagText}}" class="source-badge">{{item.sourceTagText}}</text>
+              </view>
+              <text class="card-desc">用于模具费用预设</text>
+            </view>
+            <view class="card-actions">
+              <text class="action-link" data-item="{{item}}" bindtap="copyDeviceItem">复制</text>
+              <text class="action-link" data-item="{{item}}" bindtap="editDeviceItem">编辑</text>
+              <text class="action-link danger" data-item="{{item}}" bindtap="deleteDeviceItem">删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{!loading && currentTab === 'template'}}">
+      <view class="empty-state" wx:if="{{!templateList.length}}">暂无公共模板</view>
+      <view class="card-list" wx:else>
+        <view class="preset-card" wx:for="{{templateList}}" wx:key="id" data-item="{{item}}">
+          <view class="card-top">
+            <view class="template-info">
+              <view class="card-title-row">
+                <text class="card-title">{{item.name}}</text>
+                <text wx:if="{{item.sourceTagText}}" class="source-badge">{{item.sourceTagText}}</text>
+              </view>
+              <text class="card-desc">{{item.summaryText}}</text>
+            </view>
+            <view class="card-actions">
+              <text class="action-link" data-item="{{item}}" bindtap="previewTemplateItem">预览</text>
+              <text class="action-link" data-item="{{item}}" bindtap="copyTemplateItem">复制</text>
+              <text class="action-link" data-item="{{item}}" bindtap="editTemplateItem">编辑</text>
+              <text class="action-link danger" data-item="{{item}}" bindtap="deleteTemplateItem">删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="bottom-space"></view>
   </scroll-view>
 
-  <view class="loading-full" wx:if="{{loading && processList.length === 0}}">
-    <view class="loading-spinner large"></view>
-    <text>加载中...</text>
-  </view>
-
-  <!-- 新增/编辑弹窗 -->
-  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal"></view>
-  <view class="modal-content" wx:if="{{showModal}}">
+  <view class="modal-mask" wx:if="{{showProcessModal}}" bindtap="closeProcessModal"></view>
+  <view class="modal-card large" wx:if="{{showProcessModal}}">
     <view class="modal-header">
-      <text class="modal-title">{{isEdit ? '编辑预设工序' : '新增预设工序'}}</text>
-      <view class="modal-close" bindtap="hideModal">x</view>
+      <text class="modal-title">{{processForm.id ? '编辑公共工序' : '新增公共工序'}}</text>
+      <text class="modal-close" bindtap="closeProcessModal">×</text>
     </view>
-    <scroll-view class="modal-body" scroll-y>
+    <scroll-view class="modal-body" scroll-y="true">
       <view class="form-item">
-        <text class="form-label">工序名称 *</text>
-        <input class="form-input" value="{{formData.processName}}" bindinput="onFormInput" data-field="processName" placeholder="如：冲压、焊接、喷涂" />
-      </view>
-      <view class="form-item section-search-wrap">
-        <text class="form-label">所属区域 *</text>
-        <input class="form-input" value="{{sectionSearch}}" bindinput="onSectionSearchInput" bindblur="hideSectionDropdown" placeholder="输入区域名称，搜索已有或新建" />
-        <view class="section-dropdown" wx:if="{{showSectionDropdown && filteredSections.length}}">
-          <scroll-view scroll-y style="max-height:300rpx;">
-            <view class="section-option" wx:for="{{filteredSections}}" wx:key="key" catchtap="selectSection" data-key="{{item.key}}">
-              <text class="section-option-label">{{item.label}}</text>
-              <text class="section-option-key">{{item.key}}</text>
-            </view>
-          </scroll-view>
-        </view>
-      </view>
-      <view class="form-item" wx:if="{{sectionSearch}}">
-        <text class="form-label">区域变量名 *（英文标识）</text>
-        <input class="form-input" value="{{formData.sectionKey}}" bindinput="onSectionKeyInput" placeholder="如：stamping, welding" />
+        <text class="form-label">工序名称</text>
+        <input class="form-input" value="{{processForm.name}}" data-field="name" bindinput="onProcessFieldInput" placeholder="例如：冲压、焊接" />
       </view>
 
-      <!-- 列定义 -->
-      <view class="form-divider">列定义</view>
-      <view class="col-list">
-        <view class="col-item" wx:for="{{formData.columns}}" wx:key="key">
-          <view class="col-row-top">
-            <input class="col-input name" value="{{item.label}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="label" placeholder="列名" />
-            <input class="col-input key" value="{{item.key}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="key" placeholder="变量名" disabled="{{item.key === 'name'}}" />
-            <view class="col-del" catchtap="deleteColumn" data-idx="{{index}}">x</view>
-          </view>
-          <view class="col-row-bottom">
-            <picker class="col-picker" bindchange="onColumnRoleChange" data-idx="{{index}}" range="{{['输入', '输出']}}">
-              <view class="col-tag {{item.role === 'output' ? 'output' : 'input'}}">{{item.role === 'output' ? '输出' : '输入'}}</view>
-            </picker>
-            <input class="col-input unit" value="{{item.unit}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="unit" placeholder="单位" />
-            <input wx:if="{{item.role === 'output'}}" class="col-input formula" value="{{item.formula}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="formula" placeholder="公式" />
-            <input wx:if="{{item.role === 'input' && item.key !== 'name'}}" class="col-input" value="{{item.defaultValue}}" bindinput="onColumnInput" data-idx="{{index}}" data-field="defaultValue" placeholder="默认值" />
+      <view class="form-item section-wrap">
+        <text class="form-label">所属区域</text>
+        <input class="form-input" value="{{processSectionSearch}}" bindinput="onProcessSectionSearchInput" bindblur="hideProcessSectionDropdown" placeholder="输入区域名称，可复用已有区域" />
+        <view class="dropdown" wx:if="{{showProcessSectionDropdown && processFilteredSections.length}}">
+          <view class="dropdown-item" wx:for="{{processFilteredSections}}" wx:key="key" data-key="{{item.key}}" catchtap="selectProcessSection">
+            <text>{{item.label}}</text>
+            <text class="dropdown-meta">{{item.key}}</text>
           </view>
         </view>
       </view>
-      <view class="col-add" bindtap="addColumn">+ 添加列</view>
+
+      <view class="form-item">
+        <text class="form-label">区域标识</text>
+        <input class="form-input" value="{{processForm.sectionKey}}" bindinput="onProcessSectionKeyInput" placeholder="例如：stamping、welding" />
+      </view>
+
+      <view class="form-divider">列定义</view>
+      <view class="cp-col-list">
+        <view class="cp-col-item" wx:for="{{processForm.columns}}" wx:key="index">
+          <view class="cp-col-row-top">
+            <view class="cp-col-inputs">
+              <input class="cp-col-input name" value="{{item.label}}" data-idx="{{index}}" data-field="label" bindinput="onProcessColumnInput" placeholder="列名" />
+              <input class="cp-col-input key" value="{{item.key}}" data-idx="{{index}}" data-field="key" bindinput="onProcessColumnInput" placeholder="变量名" disabled="{{item.key === 'name'}}" />
+            </view>
+            <view class="cp-col-btns">
+              <view class="cp-col-btn danger" data-idx="{{index}}" catchtap="deleteProcessColumn">×</view>
+            </view>
+          </view>
+          <view class="cp-col-row-bottom">
+            <picker class="cp-col-picker" data-idx="{{index}}" bindchange="onProcessColumnRoleChange" range="{{['输入', '输出']}}">
+              <view class="cp-col-tag {{item.role === 'output' ? 'output' : 'input'}}">{{item.role === 'output' ? '输出' : '输入'}}</view>
+            </picker>
+            <input class="cp-col-input unit" value="{{item.unit}}" data-idx="{{index}}" data-field="unit" bindinput="onProcessColumnInput" placeholder="单位" />
+            <input wx:if="{{item.role === 'output'}}" class="cp-col-input formula" value="{{item.formula}}" data-idx="{{index}}" data-field="formula" bindinput="onProcessColumnInput" placeholder="公式" />
+            <input wx:if="{{item.role !== 'output' && item.key !== 'name'}}" class="cp-col-input default-val" value="{{item.defaultValue}}" data-idx="{{index}}" data-field="defaultValue" bindinput="onProcessColumnInput" placeholder="默认值" />
+          </view>
+        </view>
+      </view>
+      <view class="cp-col-add" bindtap="addProcessColumn">+ 添加列</view>
     </scroll-view>
     <view class="modal-footer">
-      <button class="btn-cancel" bindtap="hideModal">取消</button>
-      <button class="btn-confirm" bindtap="saveProcess">保存</button>
+      <button class="btn-cancel" bindtap="closeProcessModal">取消</button>
+      <button class="btn-confirm" bindtap="saveProcessPreset">保存</button>
     </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showDeviceModal}}" bindtap="closeDeviceModal"></view>
+  <view class="modal-card large" wx:if="{{showDeviceModal}}">
+    <view class="modal-header">
+      <text class="modal-title">{{deviceForm.id ? '编辑' : '新增'}}{{deviceModalTitle}}</text>
+      <text class="modal-close" bindtap="closeDeviceModal">×</text>
+    </view>
+    <scroll-view class="modal-body" scroll-y="true">
+      <view class="form-item">
+        <text class="form-label">预设名称</text>
+        <input class="form-input" value="{{deviceForm.name}}" data-field="name" bindinput="onDeviceFieldInput" placeholder="请输入名称" />
+      </view>
+      <view class="form-item" wx:if="{{deviceCategory === 'device'}}">
+        <text class="form-label">设备能耗变量名</text>
+        <input class="form-input" value="{{deviceForm.sectionKey}}" data-field="sectionKey" bindinput="onDeviceFieldInput" placeholder="如：qianhan，用于公式绑定" />
+      </view>
+
+      <view class="form-divider">顶层变量</view>
+      <view class="cp-col-list">
+        <view class="cp-col-item" wx:for="{{deviceForm.variables}}" wx:key="index">
+          <view class="cp-col-row-top">
+            <view class="cp-col-inputs">
+              <input class="cp-col-input name" value="{{item.label}}" data-idx="{{index}}" data-field="label" bindinput="onDeviceVariableInput" placeholder="显示名称" />
+              <input class="cp-col-input key" value="{{item.key}}" data-idx="{{index}}" data-field="key" bindinput="onDeviceVariableInput" placeholder="变量名" />
+            </view>
+            <view class="cp-col-btns">
+              <view class="cp-col-btn danger" data-idx="{{index}}" catchtap="deleteDeviceVariable">×</view>
+            </view>
+          </view>
+          <view class="cp-col-row-bottom">
+            <picker class="cp-col-picker" data-idx="{{index}}" bindchange="onDeviceVariableRoleChange" range="{{['输入', '输出']}}">
+              <view class="cp-col-tag {{item.role === 'output' ? 'output' : 'input'}}">{{item.role === 'output' ? '输出' : '输入'}}</view>
+            </picker>
+            <input class="cp-col-input unit" value="{{item.unit}}" data-idx="{{index}}" data-field="unit" bindinput="onDeviceVariableInput" placeholder="单位" />
+            <input wx:if="{{item.role === 'output'}}" class="cp-col-input formula" value="{{item.formula}}" data-idx="{{index}}" data-field="formula" bindinput="onDeviceVariableInput" placeholder="公式" />
+            <input wx:if="{{item.role !== 'output'}}" class="cp-col-input default-val" value="{{item.defaultValue}}" data-idx="{{index}}" data-field="defaultValue" bindinput="onDeviceVariableInput" placeholder="默认值" />
+          </view>
+        </view>
+      </view>
+      <view class="cp-col-add" bindtap="addDeviceVariable">+ 添加顶层变量</view>
+
+      <view class="form-divider">子区域</view>
+      <view class="template-section-card" wx:for="{{deviceForm.subGroups}}" wx:key="index">
+        <view class="section-head-row">
+          <input class="form-input subgroup-input" value="{{item.label}}" data-idx="{{index}}" bindinput="onDeviceSubGroupInput" placeholder="子区域名称" />
+          <view class="section-head-actions">
+            <view class="section-delete" data-idx="{{index}}" catchtap="deleteDeviceSubGroup">删除区域</view>
+          </view>
+        </view>
+        <view class="cp-col-list">
+          <view class="cp-col-item" wx:for="{{item.variables}}" wx:key="index" wx:for-item="subVar" wx:for-index="subIndex">
+            <view class="cp-col-row-top">
+              <view class="cp-col-inputs">
+                <input class="cp-col-input name" value="{{subVar.label}}" data-idx="{{index}}" data-vidx="{{subIndex}}" data-field="label" bindinput="onDeviceSubGroupVarInput" placeholder="显示名称" />
+                <input class="cp-col-input key" value="{{subVar.key}}" data-idx="{{index}}" data-vidx="{{subIndex}}" data-field="key" bindinput="onDeviceSubGroupVarInput" placeholder="变量名" />
+              </view>
+              <view class="cp-col-btns">
+                <view class="cp-col-btn danger" data-idx="{{index}}" data-vidx="{{subIndex}}" catchtap="deleteDeviceSubGroupVar">×</view>
+              </view>
+            </view>
+            <view class="cp-col-row-bottom">
+              <picker class="cp-col-picker" data-idx="{{index}}" data-vidx="{{subIndex}}" bindchange="onDeviceSubGroupVarRoleChange" range="{{['输入', '输出']}}">
+                <view class="cp-col-tag {{subVar.role === 'output' ? 'output' : 'input'}}">{{subVar.role === 'output' ? '输出' : '输入'}}</view>
+              </picker>
+              <input class="cp-col-input unit" value="{{subVar.unit}}" data-idx="{{index}}" data-vidx="{{subIndex}}" data-field="unit" bindinput="onDeviceSubGroupVarInput" placeholder="单位" />
+              <input wx:if="{{subVar.role === 'output'}}" class="cp-col-input formula" value="{{subVar.formula}}" data-idx="{{index}}" data-vidx="{{subIndex}}" data-field="formula" bindinput="onDeviceSubGroupVarInput" placeholder="公式" />
+              <input wx:if="{{subVar.role !== 'output'}}" class="cp-col-input default-val" value="{{subVar.defaultValue}}" data-idx="{{index}}" data-vidx="{{subIndex}}" data-field="defaultValue" bindinput="onDeviceSubGroupVarInput" placeholder="默认值" />
+            </view>
+          </view>
+        </view>
+        <view class="cp-col-add" data-idx="{{index}}" bindtap="addDeviceSubGroupVar">+ 添加子变量</view>
+      </view>
+      <view class="cp-col-add common" bindtap="addDeviceSubGroup">+ 添加子区域</view>
+    </scroll-view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="closeDeviceModal">取消</button>
+      <button class="btn-confirm" bindtap="saveDevicePreset">保存</button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showTemplateModal}}" bindtap="closeTemplateModal"></view>
+  <view class="modal-card large" wx:if="{{showTemplateModal}}">
+    <view class="modal-header">
+      <text class="modal-title">{{templateForm.id ? '编辑公共模板' : '新增公共模板'}}</text>
+      <text class="modal-close" bindtap="closeTemplateModal">×</text>
+    </view>
+    <scroll-view class="modal-body" scroll-y="true">
+      <view class="form-item">
+        <text class="form-label">模板名称</text>
+        <input class="form-input" value="{{templateForm.name}}" data-field="name" bindinput="onTemplateFieldInput" placeholder="请输入模板名称" />
+      </view>
+      <view class="helper-row">
+        <view class="ghost-btn small" bindtap="fillLastUsedTemplate">读取最近使用结构</view>
+      </view>
+
+      <view class="editor-tab-bar">
+        <view class="editor-tab {{templateEditorTab === 'process' ? 'active' : ''}}" data-tab="process" bindtap="switchTemplateEditorTab">工序</view>
+        <view class="editor-tab {{templateEditorTab === 'energy' ? 'active' : ''}}" data-tab="energy" bindtap="switchTemplateEditorTab">能耗</view>
+        <view class="editor-tab {{templateEditorTab === 'mold' ? 'active' : ''}}" data-tab="mold" bindtap="switchTemplateEditorTab">模具</view>
+        <view class="editor-tab {{templateEditorTab === 'summary' ? 'active' : ''}}" data-tab="summary" bindtap="switchTemplateEditorTab">汇总</view>
+      </view>
+
+      <view wx:if="{{templateEditorTab === 'process'}}">
+        <view class="template-section-card" wx:for="{{templateEditor.sections}}" wx:key="index">
+          <view class="section-head-row">
+            <input class="form-input section-title-input" value="{{item.label}}" data-type="process" data-idx="{{index}}" data-field="label" bindinput="onTemplateSectionFieldInput" placeholder="工序区域名称" />
+            <input class="form-input section-key-input" value="{{item.key}}" data-type="process" data-idx="{{index}}" data-field="key" bindinput="onTemplateSectionFieldInput" placeholder="区域标识" />
+            <view class="section-head-actions">
+              <view class="section-delete" data-type="process" data-idx="{{index}}" bindtap="deleteTemplateSection">删除区域</view>
+            </view>
+          </view>
+          <view class="section-note">已保留 {{item.rows.length}} 条工序行数据</view>
+          <view class="cp-col-list">
+            <view class="cp-col-item" wx:for="{{item.columns}}" wx:key="index" wx:for-item="col" wx:for-index="cidx">
+              <view class="cp-col-row-top">
+                <view class="cp-col-inputs">
+                  <input class="cp-col-input name" value="{{col.label}}" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="label" bindinput="onTemplateSectionColumnInput" placeholder="列名" />
+                  <input class="cp-col-input key" value="{{col.key}}" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="key" bindinput="onTemplateSectionColumnInput" placeholder="变量名" />
+                </view>
+                <view class="cp-col-btns">
+                  <view class="cp-col-btn danger" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" bindtap="deleteTemplateSectionColumn">×</view>
+                </view>
+              </view>
+              <view class="cp-col-row-bottom">
+                <picker class="cp-col-picker" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" bindchange="onTemplateSectionColumnRoleChange" range="{{['输入', '输出']}}">
+                  <view class="cp-col-tag {{col.role === 'output' ? 'output' : 'input'}}">{{col.role === 'output' ? '输出' : '输入'}}</view>
+                </picker>
+                <input class="cp-col-input unit" value="{{col.unit}}" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="unit" bindinput="onTemplateSectionColumnInput" placeholder="单位" />
+                <input wx:if="{{col.role === 'output'}}" class="cp-col-input formula" value="{{col.formula}}" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="formula" bindinput="onTemplateSectionColumnInput" placeholder="公式" />
+                <input wx:if="{{col.role !== 'output'}}" class="cp-col-input default-val" value="{{col.defaultValue}}" data-type="process" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="defaultValue" bindinput="onTemplateSectionColumnInput" placeholder="默认值" />
+              </view>
+            </view>
+          </view>
+          <view class="cp-col-add" data-type="process" data-idx="{{index}}" bindtap="addTemplateSectionColumn">+ 添加列</view>
+        </view>
+        <view class="cp-col-add common" data-type="process" bindtap="addTemplateSection">+ 添加工序区域</view>
+      </view>
+
+      <view wx:if="{{templateEditorTab === 'energy'}}">
+        <view class="template-section-card" wx:for="{{templateEditor.energySections}}" wx:key="index">
+          <view class="section-head-row">
+            <input class="form-input section-title-input" value="{{item.label}}" data-type="energy" data-idx="{{index}}" data-field="label" bindinput="onTemplateSectionFieldInput" placeholder="能耗区域名称" />
+            <input class="form-input section-key-input" value="{{item.key}}" data-type="energy" data-idx="{{index}}" data-field="key" bindinput="onTemplateSectionFieldInput" placeholder="区域标识" />
+          </view>
+          <view class="section-head-row second">
+            <picker class="section-type-picker" data-idx="{{index}}" bindchange="onTemplateEnergySectionSubtypeChange" range="{{['设备能耗', '辅料']}}" value="{{item.subtype === 'material' ? 1 : 0}}">
+              <view class="picker-display">{{item.subtype === 'material' ? '辅料' : '设备能耗'}}</view>
+            </picker>
+            <view class="section-head-actions">
+              <view class="section-delete" data-type="energy" data-idx="{{index}}" bindtap="deleteTemplateSection">删除区域</view>
+            </view>
+          </view>
+          <view class="energy-row-card" wx:for="{{item.rows}}" wx:key="index" wx:for-item="row" wx:for-index="ridx">
+            <view class="energy-row-head">
+              <input class="form-input energy-row-name" value="{{row.name}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-field="name" bindinput="onTemplateEnergyRowInput" placeholder="预设卡片名称" />
+              <view class="section-delete" data-idx="{{index}}" data-ridx="{{ridx}}" bindtap="deleteTemplateEnergyRow">删除卡片</view>
+            </view>
+            <view class="section-note">顶层变量</view>
+            <view class="cp-col-list">
+              <view class="cp-col-item" wx:for="{{row.params}}" wx:key="index" wx:for-item="param" wx:for-index="pidx">
+                <view class="cp-col-row-top">
+                  <view class="cp-col-inputs">
+                    <input class="cp-col-input name" value="{{param.label}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" data-field="label" bindinput="onTemplateEnergyParamInput" placeholder="显示名称" />
+                    <input class="cp-col-input key" value="{{param.key}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" data-field="key" bindinput="onTemplateEnergyParamInput" placeholder="变量名" />
+                  </view>
+                  <view class="cp-col-btns">
+                    <view class="cp-col-btn danger" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" bindtap="deleteTemplateEnergyParam">×</view>
+                  </view>
+                </view>
+                <view class="cp-col-row-bottom">
+                  <picker class="cp-col-picker" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" bindchange="onTemplateEnergyParamRoleChange" range="{{['输入', '输出']}}">
+                    <view class="cp-col-tag {{param.role === 'output' ? 'output' : 'input'}}">{{param.role === 'output' ? '输出' : '输入'}}</view>
+                  </picker>
+                  <input class="cp-col-input unit" value="{{param.unit}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" data-field="unit" bindinput="onTemplateEnergyParamInput" placeholder="单位" />
+                  <input wx:if="{{param.role === 'output'}}" class="cp-col-input formula" value="{{param.formula}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" data-field="formula" bindinput="onTemplateEnergyParamInput" placeholder="公式" />
+                  <input wx:if="{{param.role !== 'output'}}" class="cp-col-input default-val" value="{{param.defaultValue}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-pidx="{{pidx}}" data-field="defaultValue" bindinput="onTemplateEnergyParamInput" placeholder="默认值" />
+                </view>
+              </view>
+            </view>
+            <view class="cp-col-add" data-idx="{{index}}" data-ridx="{{ridx}}" bindtap="addTemplateEnergyParam">+ 添加顶层变量</view>
+
+            <view class="template-section-card inner" wx:for="{{row.subGroups}}" wx:key="index" wx:for-item="group" wx:for-index="sidx">
+              <view class="section-head-row">
+                <input class="form-input subgroup-input" value="{{group.label}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" bindinput="onTemplateEnergySubGroupInput" placeholder="子区域名称" />
+                <view class="section-head-actions">
+                  <view class="section-delete" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" bindtap="deleteTemplateEnergySubGroup">删除子区域</view>
+                </view>
+              </view>
+              <view class="cp-col-list">
+                <view class="cp-col-item" wx:for="{{group.variables}}" wx:key="index" wx:for-item="v" wx:for-index="vidx">
+                  <view class="cp-col-row-top">
+                    <view class="cp-col-inputs">
+                      <input class="cp-col-input name" value="{{v.label}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" data-field="label" bindinput="onTemplateEnergySubGroupVarInput" placeholder="显示名称" />
+                      <input class="cp-col-input key" value="{{v.key}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" data-field="key" bindinput="onTemplateEnergySubGroupVarInput" placeholder="变量名" />
+                    </view>
+                    <view class="cp-col-btns">
+                      <view class="cp-col-btn danger" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" bindtap="deleteTemplateEnergySubGroupVar">×</view>
+                    </view>
+                  </view>
+                  <view class="cp-col-row-bottom">
+                    <picker class="cp-col-picker" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" bindchange="onTemplateEnergySubGroupVarRoleChange" range="{{['输入', '输出']}}">
+                      <view class="cp-col-tag {{v.role === 'output' ? 'output' : 'input'}}">{{v.role === 'output' ? '输出' : '输入'}}</view>
+                    </picker>
+                    <input class="cp-col-input unit" value="{{v.unit}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" data-field="unit" bindinput="onTemplateEnergySubGroupVarInput" placeholder="单位" />
+                    <input wx:if="{{v.role === 'output'}}" class="cp-col-input formula" value="{{v.formula}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" data-field="formula" bindinput="onTemplateEnergySubGroupVarInput" placeholder="公式" />
+                    <input wx:if="{{v.role !== 'output'}}" class="cp-col-input default-val" value="{{v.defaultValue}}" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" data-vidx="{{vidx}}" data-field="defaultValue" bindinput="onTemplateEnergySubGroupVarInput" placeholder="默认值" />
+                  </view>
+                </view>
+              </view>
+              <view class="cp-col-add" data-idx="{{index}}" data-ridx="{{ridx}}" data-sidx="{{sidx}}" bindtap="addTemplateEnergySubGroupVar">+ 添加子变量</view>
+            </view>
+            <view class="cp-col-add common" data-idx="{{index}}" data-ridx="{{ridx}}" bindtap="addTemplateEnergySubGroup">+ 添加子区域</view>
+          </view>
+          <view class="cp-col-add" data-idx="{{index}}" bindtap="addTemplateEnergyRow">+ 添加预设卡片</view>
+        </view>
+        <view class="cp-col-add common" data-type="energy" bindtap="addTemplateSection">+ 添加能耗区域</view>
+      </view>
+
+      <view wx:if="{{templateEditorTab === 'mold'}}">
+        <view class="template-section-card" wx:for="{{templateEditor.moldFeeSections}}" wx:key="index">
+          <view class="section-head-row">
+            <input class="form-input section-title-input" value="{{item.label}}" data-type="mold" data-idx="{{index}}" data-field="label" bindinput="onTemplateSectionFieldInput" placeholder="模具区域名称" />
+            <input class="form-input section-key-input" value="{{item.key}}" data-type="mold" data-idx="{{index}}" data-field="key" bindinput="onTemplateSectionFieldInput" placeholder="区域标识" />
+            <view class="section-head-actions">
+              <view class="section-delete" data-type="mold" data-idx="{{index}}" bindtap="deleteTemplateSection">删除区域</view>
+            </view>
+          </view>
+          <view class="section-note">已保留 {{item.rows.length}} 条模具行数据</view>
+          <view class="cp-col-list">
+            <view class="cp-col-item" wx:for="{{item.columns}}" wx:key="index" wx:for-item="col" wx:for-index="cidx">
+              <view class="cp-col-row-top">
+                <view class="cp-col-inputs">
+                  <input class="cp-col-input name" value="{{col.label}}" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="label" bindinput="onTemplateSectionColumnInput" placeholder="列名" />
+                  <input class="cp-col-input key" value="{{col.key}}" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="key" bindinput="onTemplateSectionColumnInput" placeholder="变量名" />
+                </view>
+                <view class="cp-col-btns">
+                  <view class="cp-col-btn danger" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" bindtap="deleteTemplateSectionColumn">×</view>
+                </view>
+              </view>
+              <view class="cp-col-row-bottom">
+                <picker class="cp-col-picker" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" bindchange="onTemplateSectionColumnRoleChange" range="{{['输入', '输出']}}">
+                  <view class="cp-col-tag {{col.role === 'output' ? 'output' : 'input'}}">{{col.role === 'output' ? '输出' : '输入'}}</view>
+                </picker>
+                <input class="cp-col-input unit" value="{{col.unit}}" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="unit" bindinput="onTemplateSectionColumnInput" placeholder="单位" />
+                <input wx:if="{{col.role === 'output'}}" class="cp-col-input formula" value="{{col.formula}}" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="formula" bindinput="onTemplateSectionColumnInput" placeholder="公式" />
+                <input wx:if="{{col.role !== 'output'}}" class="cp-col-input default-val" value="{{col.defaultValue}}" data-type="mold" data-idx="{{index}}" data-cidx="{{cidx}}" data-field="defaultValue" bindinput="onTemplateSectionColumnInput" placeholder="默认值" />
+              </view>
+            </view>
+          </view>
+          <view class="cp-col-add" data-type="mold" data-idx="{{index}}" bindtap="addTemplateSectionColumn">+ 添加列</view>
+        </view>
+        <view class="cp-col-add common" data-type="mold" bindtap="addTemplateSection">+ 添加模具区域</view>
+      </view>
+
+      <view wx:if="{{templateEditorTab === 'summary'}}">
+        <view class="template-section-card" wx:for="{{templateEditor.summary}}" wx:key="index">
+          <view class="cp-summary-edit-row">
+            <input class="cp-col-input name" value="{{item.label}}" data-idx="{{index}}" data-field="label" bindinput="onTemplateSummaryInput" placeholder="汇总名称" />
+            <input class="cp-col-input key" value="{{item.key}}" data-idx="{{index}}" data-field="key" bindinput="onTemplateSummaryInput" placeholder="变量名" />
+            <view class="cp-col-btn danger" data-idx="{{index}}" bindtap="deleteTemplateSummaryItem">×</view>
+          </view>
+          <view class="cp-col-row-bottom">
+            <input class="cp-col-input formula" value="{{item.formula}}" data-idx="{{index}}" data-field="formula" bindinput="onTemplateSummaryInput" placeholder="公式" />
+            <input class="cp-col-input default-val" value="{{item.value}}" data-idx="{{index}}" data-field="value" bindinput="onTemplateSummaryInput" placeholder="默认值" />
+          </view>
+        </view>
+        <view class="cp-col-add common" bindtap="addTemplateSummaryItem">+ 添加汇总项</view>
+      </view>
+
+    </scroll-view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="closeTemplateModal">取消</button>
+      <button class="btn-confirm" bindtap="saveTemplate">保存</button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showTemplatePreview}}" bindtap="closeTemplatePreview"></view>
+  <view class="modal-card large" wx:if="{{showTemplatePreview}}">
+    <view class="modal-header">
+      <text class="modal-title">{{previewTemplateTitle}}</text>
+      <text class="modal-close" bindtap="closeTemplatePreview">×</text>
+    </view>
+    <scroll-view class="modal-body" scroll-y="true">
+      <view class="preview-summary-chip">{{previewTemplateText}}</view>
+
+      <view class="tpl-pv-section" wx:for="{{previewTemplateData.sections}}" wx:key="key" wx:for-item="sec">
+        <view class="tpl-pv-section-header">
+          <text class="tpl-pv-section-label">{{sec.label}}</text>
+          <text class="tpl-pv-section-key">{{sec.key}}</text>
+        </view>
+        <scroll-view class="tpl-pv-table-scroll" scroll-x>
+          <view class="tpl-pv-table">
+            <view class="tpl-pv-row header">
+              <text class="tpl-pv-cell tpl-pv-cell-no">No.</text>
+              <text class="tpl-pv-cell" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">{{col.label}}{{col.unit ? '(' + col.unit + ')' : ''}}</text>
+            </view>
+            <block wx:if="{{sec.rows.length}}">
+              <view class="tpl-pv-row" wx:for="{{sec.rows}}" wx:key="id" wx:for-item="row">
+                <text class="tpl-pv-cell tpl-pv-cell-no">{{index + 1}}</text>
+                <text class="tpl-pv-cell {{col.role === 'output' ? 'output' : ''}}" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">{{row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== '' ? row[col.key] : '-'}}</text>
+              </view>
+            </block>
+            <view class="tpl-pv-row empty" wx:else>
+              <text class="tpl-pv-cell tpl-pv-cell-no">-</text>
+              <text class="tpl-pv-cell" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">-</text>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="tpl-pv-empty" wx:if="{{!sec.rows.length}}">暂无数据</view>
+      </view>
+
+      <view class="tpl-pv-energy" wx:if="{{previewTemplateData.energySections.length}}">
+        <view class="tpl-pv-group-title">能耗</view>
+        <view class="tpl-pv-energy-section" wx:for="{{previewTemplateData.energySections}}" wx:key="key" wx:for-item="sec">
+          <view class="tpl-pv-section-header energy">
+            <text class="tpl-pv-section-label">{{sec.label}}</text>
+            <text class="tpl-pv-section-key">{{sec.key}}</text>
+          </view>
+          <view class="tpl-pv-energy-cards" wx:if="{{sec.rows.length}}">
+            <view class="tpl-pv-energy-card" wx:for="{{sec.rows}}" wx:key="id" wx:for-item="row">
+              <view class="tpl-pv-energy-card-title">{{row.name || '未命名'}}</view>
+              <view class="tpl-pv-energy-grid">
+                <view class="tpl-pv-energy-item" wx:for="{{row.params}}" wx:key="key" wx:for-item="p">
+                  <text class="tpl-pv-energy-label">{{p.label}}{{p.unit ? '(' + p.unit + ')' : ''}}</text>
+                  <text class="tpl-pv-energy-val">{{row[p.key] !== undefined && row[p.key] !== null && row[p.key] !== '' ? row[p.key] : '-'}}</text>
+                </view>
+              </view>
+              <view class="tpl-pv-energy-sub" wx:for="{{row.subGroups}}" wx:key="label" wx:for-item="sg">
+                <view class="tpl-pv-energy-sub-title">{{sg.label}}</view>
+                <view class="tpl-pv-energy-grid">
+                  <view class="tpl-pv-energy-item" wx:for="{{sg.variables}}" wx:key="key" wx:for-item="p">
+                    <text class="tpl-pv-energy-label">{{p.label}}{{p.unit ? '(' + p.unit + ')' : ''}}</text>
+                    <text class="tpl-pv-energy-val">{{row[p.key] !== undefined && row[p.key] !== null && row[p.key] !== '' ? row[p.key] : '-'}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="tpl-pv-empty" wx:else>暂无数据</view>
+        </view>
+      </view>
+
+      <view class="tpl-pv-mold" wx:if="{{previewTemplateData.moldFeeSections.length}}">
+        <view class="tpl-pv-group-title">模具费</view>
+        <view class="tpl-pv-section" wx:for="{{previewTemplateData.moldFeeSections}}" wx:key="key" wx:for-item="sec">
+          <view class="tpl-pv-section-header mold">
+            <text class="tpl-pv-section-label">{{sec.label}}</text>
+            <text class="tpl-pv-section-key">{{sec.key}}</text>
+          </view>
+          <scroll-view class="tpl-pv-table-scroll" scroll-x>
+            <view class="tpl-pv-table">
+              <view class="tpl-pv-row header">
+                <text class="tpl-pv-cell tpl-pv-cell-no">No.</text>
+                <text class="tpl-pv-cell" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">{{col.label}}{{col.unit ? '(' + col.unit + ')' : ''}}</text>
+              </view>
+              <block wx:if="{{sec.rows.length}}">
+                <view class="tpl-pv-row" wx:for="{{sec.rows}}" wx:key="id" wx:for-item="row">
+                  <text class="tpl-pv-cell tpl-pv-cell-no">{{index + 1}}</text>
+                  <text class="tpl-pv-cell {{col.role === 'output' ? 'output' : ''}}" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">{{row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== '' ? row[col.key] : '-'}}</text>
+                </view>
+              </block>
+              <view class="tpl-pv-row empty" wx:else>
+                <text class="tpl-pv-cell tpl-pv-cell-no">-</text>
+                <text class="tpl-pv-cell" wx:for="{{sec.columns}}" wx:key="key" wx:for-item="col">-</text>
+              </view>
+            </view>
+          </scroll-view>
+          <view class="tpl-pv-empty" wx:if="{{!sec.rows.length}}">暂无数据</view>
+        </view>
+      </view>
+
+      <view class="tpl-pv-summary" wx:if="{{previewTemplateData.summary.length}}">
+        <view class="tpl-pv-summary-title">汇总</view>
+        <view class="tpl-pv-summary-grid">
+          <view class="tpl-pv-summary-item" wx:for="{{previewTemplateData.summary}}" wx:key="key">
+            <text class="tpl-pv-summary-label">{{item.label}}</text>
+            <text class="tpl-pv-summary-formula">{{item.value !== undefined && item.value !== null && item.value !== '' ? item.value : (item.formula || '-')}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
 </view>

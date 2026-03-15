@@ -7,10 +7,12 @@ import com.gxyide.pricing.dto.BomNodeDTO;
 import com.gxyide.pricing.dto.excel.BomExcelRowDTO;
 import com.gxyide.pricing.entity.QuoteBom;
 import com.gxyide.pricing.entity.QuoteOrder;
+import com.gxyide.pricing.entity.SysUser;
 import com.gxyide.pricing.enums.QuoteStatusEnum;
 import com.gxyide.pricing.listener.BomExcelListener;
 import com.gxyide.pricing.mapper.QuoteBomMapper;
 import com.gxyide.pricing.mapper.QuoteOrderMapper;
+import com.gxyide.pricing.mapper.SysUserMapper;
 import com.gxyide.pricing.vo.BomTreeNodeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
 
     private final QuoteBomMapper bomMapper;
     private final QuoteOrderMapper orderMapper;
+    private final SysUserMapper sysUserMapper;
 
     // ==================== BOM 编辑器 CRUD ====================
 
@@ -412,8 +415,28 @@ public class BomService extends ServiceImpl<QuoteBomMapper, QuoteBom> {
 
         calculateTotalWeight(orderId);
 
+        if (order.getCurrentHandlerId() != null) {
+            SysUser tech = sysUserMapper.selectById(order.getCurrentHandlerId());
+            if (tech != null) {
+                if (tech.getTechProcessUserId() != null) {
+                    order.setProcessHandlerId(tech.getTechProcessUserId());
+                }
+                if (tech.getTechLogisticsUserId() != null) {
+                    order.setLogisticsHandlerId(tech.getTechLogisticsUserId());
+                }
+            }
+        }
+        if (order.getProcessHandlerId() == null) {
+            SysUser creator = order.getCreatorId() != null ? sysUserMapper.selectById(order.getCreatorId()) : null;
+            if (creator != null) {
+                order.setProcessHandlerId(creator.getProcessUserId());
+            }
+        }
         order.setStatus(QuoteStatusEnum.PENDING_PROCESS.getCode());
-        order.setCurrentHandlerId(null);
+        if (order.getProcessHandlerId() == null) {
+            throw new RuntimeException("请先配置归属生产员");
+        }
+        order.setCurrentHandlerId(order.getProcessHandlerId());
         orderMapper.updateById(order);
 
         log.info("报价单[{}]BOM提交完成，流转到工艺工程师", orderId);

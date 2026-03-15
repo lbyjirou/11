@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gxyide.pricing.common.Result;
 import com.gxyide.pricing.dto.ProfitAdjustDTO;
 import com.gxyide.pricing.dto.RejectDTO;
+import com.gxyide.pricing.entity.QuoteOrder;
 import com.gxyide.pricing.entity.SysUser;
 import com.gxyide.pricing.enums.QuoteStatusEnum;
 import com.gxyide.pricing.mapper.SysUserMapper;
 import com.gxyide.pricing.service.ManagerService;
+import com.gxyide.pricing.service.QuoteService;
 import com.gxyide.pricing.vo.QuoteSummaryVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +28,7 @@ import java.util.Map;
 public class ManagerController {
 
     private final ManagerService managerService;
+    private final QuoteService quoteService;
     private final SysUserMapper sysUserMapper;
 
     /**
@@ -35,6 +38,10 @@ public class ManagerController {
     @GetMapping("/summary/{orderId}")
     @PreAuthorize("@perm.check('DATA_VIEW_MANAGER')")
     public Result<QuoteSummaryVO> getSummary(@PathVariable Long orderId) {
+        SysUser user = getCurrentUser();
+        if (!canAccessApproval(orderId, user)) {
+            return Result.error("当前报价单未分配给你");
+        }
         return Result.success(managerService.getSummary(orderId));
     }
 
@@ -45,6 +52,10 @@ public class ManagerController {
     @PostMapping("/adjust")
     @PreAuthorize("@perm.check('WORKFLOW_APPROVE')")
     public Result<QuoteSummaryVO> adjustProfit(@RequestBody ProfitAdjustDTO dto) {
+        SysUser user = getCurrentUser();
+        if (!canAccessApproval(dto.getOrderId(), user)) {
+            return Result.error("当前报价单未分配给你");
+        }
         return Result.success(managerService.adjustProfit(dto));
     }
 
@@ -56,6 +67,9 @@ public class ManagerController {
     @PreAuthorize("@perm.check('WORKFLOW_APPROVE')")
     public Result<Map<String, String>> approve(@PathVariable Long orderId) {
         SysUser user = getCurrentUser();
+        if (!canAccessApproval(orderId, user)) {
+            return Result.error("当前报价单未分配给你");
+        }
         QuoteStatusEnum newStatus = managerService.approve(orderId, user != null ? user.getId() : null);
         return Result.success(Map.of("newStatus", newStatus.getCode(), "statusName", newStatus.getName()));
     }
@@ -72,9 +86,25 @@ public class ManagerController {
             return Result.error("无效的目标状态");
         }
         SysUser user = getCurrentUser();
+        if (!canAccessApproval(dto.getOrderId(), user)) {
+            return Result.error("当前报价单未分配给你");
+        }
         managerService.reject(dto.getOrderId(), targetStatus, dto.getReason(),
                 user != null ? user.getId() : null);
         return Result.success();
+    }
+
+    private boolean canAccessApproval(Long orderId, SysUser user) {
+        if (user == null || orderId == null) {
+            return false;
+        }
+        if ("ADMIN".equals(user.getRole())) {
+            return true;
+        }
+        QuoteOrder order = quoteService.getById(orderId);
+        return order != null
+                && order.getCurrentHandlerId() != null
+                && order.getCurrentHandlerId().equals(user.getId());
     }
 
     private SysUser getCurrentUser() {

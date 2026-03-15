@@ -32,6 +32,7 @@ public class LogisticsCalcService extends ServiceImpl<QuoteLogisticsMapper, Quot
     private final BaseVehicleDictMapper vehicleDictMapper;
     private final BasePackDictMapper packDictMapper;
     private final QuoteOrderMapper orderMapper;
+    private final SysUserMapper sysUserMapper;
 
     /**
      * 保存或更新物流信息（自动计算）
@@ -216,8 +217,16 @@ public class LogisticsCalcService extends ServiceImpl<QuoteLogisticsMapper, Quot
         order.setPackagingCost(logistics.getUnitPackCost());
 
         // 状态流转到报价经理
+        if (order.getCurrentHandlerId() != null) {
+            SysUser logisticsUser = sysUserMapper.selectById(order.getCurrentHandlerId());
+            if (logisticsUser != null && logisticsUser.getLogisticsApproveUserId() != null) {
+                order.setCurrentHandlerId(logisticsUser.getLogisticsApproveUserId());
+            }
+        }
+        if (order.getCurrentHandlerId() == null) {
+            throw new RuntimeException("请先配置归属报价经理");
+        }
         order.setStatus(QuoteStatusEnum.PENDING_APPROVAL.getCode());
-        order.setCurrentHandlerId(null);
         orderMapper.updateById(order);
 
         log.info("报价单[{}]物流测算完成，流转到报价经理", orderId);

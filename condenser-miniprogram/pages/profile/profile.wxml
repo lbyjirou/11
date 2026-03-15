@@ -10,44 +10,50 @@
   </view>
 
   <view class="menu-list">
-    <view class="menu-item" wx:if="{{canManageProcess}}" bindtap="goToProcessManage">
-      <text class="menu-icon">🔧</text>
-      <text class="menu-text">工序管理</text>
+    <view class="menu-item" wx:if="{{canManageProcessCenter}}" bindtap="goToProcessManage">
+      <text class="menu-icon">工</text>
+      <text class="menu-text">公共工艺预设中心</text>
       <text class="menu-arrow">></text>
     </view>
 
     <view class="menu-item" wx:if="{{canManageSpec}}" bindtap="goToSpecManage">
-      <text class="menu-icon">📦</text>
+      <text class="menu-icon">规</text>
       <text class="menu-text">规格库管理</text>
       <text class="menu-arrow">></text>
     </view>
 
     <view class="menu-item" wx:if="{{canViewLogistics}}" bindtap="goToLogisticsView">
-      <text class="menu-icon">🚚</text>
+      <text class="menu-icon">物</text>
       <text class="menu-text">物流价格查询</text>
       <text class="menu-arrow">></text>
     </view>
 
     <view class="menu-item" wx:if="{{canManageUser}}" bindtap="goToUserManage">
-      <text class="menu-icon">👥</text>
+      <text class="menu-icon">人</text>
       <text class="menu-text">用户管理</text>
       <text class="menu-arrow">></text>
     </view>
 
+    <view class="menu-item" wx:if="{{canManageAssignment}}" bindtap="goToAssignmentManage">
+      <text class="menu-icon">分</text>
+      <text class="menu-text">归属分配</text>
+      <text class="menu-arrow">></text>
+    </view>
+
     <view class="menu-item" wx:if="{{canManageRole}}" bindtap="goToRoleManage">
-      <text class="menu-icon">🔑</text>
+      <text class="menu-icon">权</text>
       <text class="menu-text">角色管理</text>
       <text class="menu-arrow">></text>
     </view>
 
     <view class="menu-item" wx:if="{{canManageConfig}}" bindtap="goToConfig">
-      <text class="menu-icon">⚙️</text>
+      <text class="menu-icon">设</text>
       <text class="menu-text">系统配置</text>
       <text class="menu-arrow">></text>
     </view>
 
     <view class="menu-item" wx:if="{{canManageConfig}}" bindtap="goToDeadlineSettings">
-      <text class="menu-icon">⏰</text>
+      <text class="menu-icon">期</text>
       <text class="menu-text">交期约束设置</text>
       <text class="menu-arrow">></text>
     </view>

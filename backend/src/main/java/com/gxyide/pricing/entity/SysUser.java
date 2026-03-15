@@ -23,6 +23,26 @@ public class SysUser {
 
     private Integer status;
 
+    /** 归属技术员（销售用户可配置） */
+    private Long techUserId;
+
+    /** 归属生产员（销售用户可配置） */
+    private Long processUserId;
+
+    /** 归属物流员（销售用户可配置） */
+    private Long logisticsUserId;
+
+    /** 技术归属生产员（技术用户可配置） */
+    private Long techProcessUserId;
+
+    /** 技术归属物流员（技术用户可配置） */
+    private Long techLogisticsUserId;
+
+    /** 生产归属物流员（生产用户可配置） */
+    private Long processLogisticsUserId;
+
+    private Long logisticsApproveUserId;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

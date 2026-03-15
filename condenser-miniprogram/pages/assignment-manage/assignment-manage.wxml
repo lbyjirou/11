@@ -1,0 +1,193 @@
+<view class="page-container">
+  <view class="nav-bar">
+    <view class="back-btn" bindtap="goBack">
+      <view class="back-arrow"></view>
+    </view>
+    <text class="nav-title">归属分配</text>
+  </view>
+
+  <view class="toolbar">
+    <view class="search-box">
+      <text class="search-icon">搜</text>
+      <input class="search-input" type="text" placeholder="搜索姓名或账号" value="{{searchText}}" bindinput="onSearchInput" />
+    </view>
+    <picker wx:if="{{activeTab === 'SALES'}}" class="filter-picker" bindchange="onFilterChange" value="{{filterIndex}}" range="{{filterOptions}}" range-key="label">
+      <view class="filter-content">
+        <text>{{filterOptions[filterIndex].label}}</text>
+        <view class="picker-arrow"></view>
+      </view>
+    </picker>
+  </view>
+
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === item.value ? 'active' : ''}}" wx:for="{{tabs}}" wx:key="value" data-tab="{{item.value}}" bindtap="setActiveTab">
+      {{item.label}}
+    </view>
+  </view>
+
+  <view class="batch-bar" wx:if="{{activeTab === 'SALES'}}">
+    <text>已选择 {{selectedSalesIds.length}} 人</text>
+    <view class="batch-actions">
+      <view class="batch-btn ghost" bindtap="clearSelection">清空</view>
+      <view class="batch-btn primary" bindtap="showBatchAssign">批量分配</view>
+    </view>
+  </view>
+
+  <scroll-view class="list-area" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled bindrefresherrefresh="onRefresh" refresher-triggered="{{refreshing}}">
+    <view class="empty-state" wx:if="{{!loading && activeTab === 'SALES' && salesUsersView.length === 0}}">
+      <text class="empty-text">暂无销售数据</text>
+    </view>
+
+    <view class="user-list" wx:if="{{activeTab === 'SALES' && salesUsersView.length > 0}}">
+      <view class="user-item" wx:for="{{salesUsersView}}" wx:key="id">
+        <view class="user-avatar">
+          <text>{{item.avatarText}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{item.name}}</view>
+          <view class="user-meta">
+            <text class="user-account">@{{item.username}}</text>
+            <text class="user-role SALES">销售</text>
+          </view>
+          <view class="user-assign">
+            <view class="assign-chip">归属技术：{{item.techLabel}}</view>
+          </view>
+        </view>
+        <view class="user-actions">
+          <view class="select-btn {{item.selected ? 'selected' : ''}}" bindtap="toggleSelect" data-id="{{item.id}}">批量</view>
+          <view class="action-btn assign" bindtap="openAssignModal" data-id="{{item.id}}" data-role="{{item.role}}">归属分配</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{!loading && activeTab === 'TECH' && techUsersView.length === 0}}">
+      <text class="empty-text">暂无技术数据</text>
+    </view>
+
+    <view class="user-list" wx:if="{{activeTab === 'TECH' && techUsersView.length > 0}}">
+      <view class="user-item" wx:for="{{techUsersView}}" wx:key="id">
+        <view class="user-avatar">
+          <text>{{item.avatarText}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{item.name}}</view>
+          <view class="user-meta">
+            <text class="user-account">@{{item.username}}</text>
+            <text class="user-role TECH">技术</text>
+          </view>
+          <view class="user-assign">
+            <view class="assign-chip">负责销售：{{item.salesCount}} 人</view>
+            <view class="assign-chip" wx:if="{{item.salesPreview}}">{{item.salesPreview}}</view>
+            <view class="assign-chip">流向生产：{{item.processLabel}}</view>
+          </view>
+        </view>
+        <view class="user-actions">
+          <view class="action-btn assign" bindtap="openAssignModal" data-id="{{item.id}}" data-role="{{item.role}}">归属分配</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{!loading && activeTab === 'PROCESS' && processUsersView.length === 0}}">
+      <text class="empty-text">暂无生产数据</text>
+    </view>
+
+    <view class="user-list" wx:if="{{activeTab === 'PROCESS' && processUsersView.length > 0}}">
+      <view class="user-item" wx:for="{{processUsersView}}" wx:key="id">
+        <view class="user-avatar">
+          <text>{{item.avatarText}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{item.name}}</view>
+          <view class="user-meta">
+            <text class="user-account">@{{item.username}}</text>
+            <text class="user-role PROCESS">生产</text>
+          </view>
+          <view class="user-assign">
+            <view class="assign-chip">负责技术：{{item.techCount}} 人</view>
+            <view class="assign-chip" wx:if="{{item.techPreview}}">{{item.techPreview}}</view>
+            <view class="assign-chip">流向物流：{{item.logisticsLabel}}</view>
+          </view>
+        </view>
+        <view class="user-actions">
+          <view class="action-btn assign" bindtap="openAssignModal" data-id="{{item.id}}" data-role="{{item.role}}">归属分配</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{!loading && activeTab === 'LOGISTICS' && logisticsUsersView.length === 0}}">
+      <text class="empty-text">暂无物流数据</text>
+    </view>
+
+    <view class="user-list" wx:if="{{activeTab === 'LOGISTICS' && logisticsUsersView.length > 0}}">
+      <view class="user-item" wx:for="{{logisticsUsersView}}" wx:key="id">
+        <view class="user-avatar">
+          <text>{{item.avatarText}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name">{{item.name}}</view>
+          <view class="user-meta">
+            <text class="user-account">@{{item.username}}</text>
+            <text class="user-role LOGISTICS">物流</text>
+          </view>
+          <view class="user-assign">
+            <view class="assign-chip">负责生产：{{item.processCount}} 人</view>
+            <view class="assign-chip" wx:if="{{item.processPreview}}">{{item.processPreview}}</view>
+            <view class="assign-chip">流向审批：{{item.approvalLabel}}</view>
+          </view>
+        </view>
+        <view class="user-actions">
+          <view class="action-btn assign" bindtap="openAssignModal" data-id="{{item.id}}" data-role="{{item.role}}">归属分配</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
+
+  <view class="loading-full" wx:if="{{loading}}">
+    <view class="loading-spinner large"></view>
+    <text>加载中...</text>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showAssignModal}}" bindtap="hideAssignModal"></view>
+  <view class="modal-content assign-modal" wx:if="{{showAssignModal}}">
+    <view class="modal-header">
+      <text class="modal-title">{{modalTitle}}</text>
+      <view class="modal-close" bindtap="hideAssignModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="assign-summary" wx:if="{{summaryTags.length > 0}}">
+        <view class="summary-item" wx:for="{{summaryTags}}" wx:key="*this">{{item}}</view>
+      </view>
+
+      <view class="modal-tab-bar" wx:if="{{modalTabs.length > 1}}">
+        <view class="modal-tab {{modalTab === item.value ? 'active' : ''}}" wx:for="{{modalTabs}}" wx:key="value" data-tab="{{item.value}}" bindtap="setModalTab">
+          {{item.label}}
+        </view>
+      </view>
+
+      <view class="modal-search">
+        <text class="search-icon">搜</text>
+        <input class="search-input" type="text" placeholder="搜索人员" value="{{modalSearchText}}" bindinput="onModalSearchInput" />
+      </view>
+
+      <view class="modal-list" wx:if="{{modalList.length > 0}}">
+        <view class="modal-item" wx:for="{{modalList}}" wx:key="value" data-id="{{item.value}}" bindtap="selectModalUser">
+          <view class="radio {{item.checked ? 'checked' : ''}}"></view>
+          <view class="modal-item-main">
+            <text class="modal-name">{{item.label}}</text>
+            <text class="modal-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state modal-empty" wx:if="{{modalList.length === 0}}">
+        <text class="empty-text">暂无匹配人员</text>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <button class="btn-cancel" bindtap="hideAssignModal">取消</button>
+      <button class="btn-confirm" bindtap="saveAssignments">保存</button>
+    </view>
+  </view>
+</view>

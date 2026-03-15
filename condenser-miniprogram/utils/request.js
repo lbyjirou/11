@@ -105,6 +105,14 @@ function getProcessList() {
   return request('/process/list')
 }
 
+function getProcessPresetList() {
+  return request('/process/preset-list')
+}
+
+function getPublicProcessList() {
+  return request('/process/all')
+}
+
 function createProcess(data) {
   return request('/process', 'POST', data)
 }
@@ -406,8 +414,9 @@ function deleteMaterialCostPreset(id) {
   return request('/material-cost-preset/' + id, 'DELETE')
 }
 
-function getProcessTemplates() {
-  return request('/process-template/list')
+function getProcessTemplates(scope) {
+  const query = scope ? ('?scope=' + encodeURIComponent(scope)) : ''
+  return request('/process-template/list' + query)
 }
 
 function createProcessTemplate(data) {
@@ -428,12 +437,16 @@ function getLastUsedProcessStructure() {
 
 // ==================== 统一能耗模版 API（device/mold/material） ====================
 
-function getEnergyDeviceTemplates(category) {
-  return request('/energy-device-template/list?category=' + encodeURIComponent(category || 'device'))
+function getEnergyDeviceTemplates(category, scope) {
+  let url = '/energy-device-template/list?category=' + encodeURIComponent(category || 'device')
+  if (scope) url += '&scope=' + encodeURIComponent(scope)
+  return request(url)
 }
 
-function searchEnergyDeviceTemplates(keyword, category) {
-  return request('/energy-device-template/search?keyword=' + encodeURIComponent(keyword || '') + '&category=' + encodeURIComponent(category || 'device'))
+function searchEnergyDeviceTemplates(keyword, category, scope) {
+  let url = '/energy-device-template/search?keyword=' + encodeURIComponent(keyword || '') + '&category=' + encodeURIComponent(category || 'device')
+  if (scope) url += '&scope=' + encodeURIComponent(scope)
+  return request(url)
 }
 
 function createEnergyDeviceTemplate(data) {
@@ -468,6 +481,8 @@ module.exports = {
   updateSpec,
   deleteSpec,
   getProcessList,
+  getProcessPresetList,
+  getPublicProcessList,
   createProcess,
   updateProcess,
   deleteProcess,
